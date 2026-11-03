@@ -1,4 +1,4 @@
-# rum-testing-gpu
+# d-rum-testing-gpu
 
 GPU algorithms for testing discrete-choice random utility models (RUM): the code of the paper *Alternative
 Computational Formulations for Testing Discrete-Choice Random Utility Models*.

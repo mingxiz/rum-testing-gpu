@@ -1,0 +1,37 @@
+key,method,n,mp,opt,status,UB,LB,gap_rel,gap_abs,stopped_by_rule,iters,n_columns,ip_calls,build_s,solve_s,total_s,cpu_s,threads,host,job_id,elapsed,peak_mem_gb,note
+n20_m28,cgip,20,10640,5.4469044261078485,timeout,,,,,,,,,,,,,24,,60955145,1-00:00:00,17.5,killed at the wall-time limit (1-00:00:00) before reaching the 1% rule; no bounds saved
+n20_m28,cgip_heur_rand,20,10640,5.4469044261078485,timeout,,,,,,,,,,,,,24,,60955146,1-00:00:16,14.2,killed at the wall-time limit (1-00:00:16) before reaching the 1% rule; no bounds saved
+n20_m28,cgip_heur_rand_R10,20,10640,5.4469044261078485,timeout,,,,,,,,,,,,,24,,61409182,1-00:00:24,16.1,killed at the wall-time limit (1-00:00:24) before reaching the 1% rule; no bounds saved
+n20_m28_lam5,cgip,20,10640,2.4987348223906163,timeout,,,,,,,,,,,,,24,,60955147,1-00:00:11,14.3,killed at the wall-time limit (1-00:00:11) before reaching the 1% rule; no bounds saved
+n20_m28_lam5,cgip_heur_rand,20,10640,2.4987348223906163,timeout,,,,,,,,,,,,,24,,60955148,1-00:00:26,13.2,killed at the wall-time limit (1-00:00:26) before reaching the 1% rule; no bounds saved
+n20_m28_lam5,cgip_heur_rand_R10,20,10640,2.4987348223906163,timeout,,,,,,,,,,,,,24,,61409183,1-00:00:10,15.8,killed at the wall-time limit (1-00:00:10) before reaching the 1% rule; no bounds saved
+n20_m28_lam10,cgip,20,10640,0.0,timeout,,,,,,,,,,,,,24,,60955149,1-00:00:10,16.8,killed at the wall-time limit (1-00:00:10) before reaching the 1% rule; no bounds saved
+n20_m28_lam10,cgip_heur_rand,20,10640,0.0,timeout,,,,,,,,,,,,,24,,60955150,1-00:00:04,3.7,killed at the wall-time limit (1-00:00:04) before reaching the 1% rule; no bounds saved
+n20_m28_lam10,cgip_heur_rand_R10,20,10640,0.0,timeout,,,,,,,,,,,,,24,,61409184,1-00:00:02,3.9,killed at the wall-time limit (1-00:00:02) before reaching the 1% rule; no bounds saved
+n20_m138,cgip,20,52446,13.027603024065435,timeout,,,,,,,,,,,,,24,,60955151,1-00:00:11,30.4,killed at the wall-time limit (1-00:00:11) before reaching the 1% rule; no bounds saved
+n20_m138,cgip_heur_rand,20,52446,13.027603024065435,timeout,,,,,,,,,,,,,24,,60955152,1-00:00:15,32.4,killed at the wall-time limit (1-00:00:15) before reaching the 1% rule; no bounds saved
+n20_m138,cgip_heur_rand_R10,20,52446,13.027603024065435,timeout,,,,,,,,,,,,,24,,61409185,1-00:00:04,32.0,killed at the wall-time limit (1-00:00:04) before reaching the 1% rule; no bounds saved
+n20_m138_lam5,cgip,20,52446,6.300471254001114,timeout,,,,,,,,,,,,,24,,60955153,1-00:00:14,31.6,killed at the wall-time limit (1-00:00:14) before reaching the 1% rule; no bounds saved
+n20_m138_lam5,cgip_heur_rand,20,52446,6.300471254001114,timeout,,,,,,,,,,,,,24,,60955154,1-00:00:09,31.0,killed at the wall-time limit (1-00:00:09) before reaching the 1% rule; no bounds saved
+n20_m138_lam5,cgip_heur_rand_R10,20,52446,6.300471254001114,timeout,,,,,,,,,,,,,24,,61409186,1-00:00:02,32.7,killed at the wall-time limit (1-00:00:02) before reaching the 1% rule; no bounds saved
+n20_m138_lam10,cgip,20,52446,0.0,timeout,,,,,,,,,,,,,24,,60955155,1-00:00:23,28.8,killed at the wall-time limit (1-00:00:23) before reaching the 1% rule; no bounds saved
+n20_m138_lam10,cgip_heur_rand,20,52446,0.0,timeout,,,,,,,,,,,,,24,,60955156,1-00:00:14,6.0,killed at the wall-time limit (1-00:00:14) before reaching the 1% rule; no bounds saved
+n20_m138_lam10,cgip_heur_rand_R10,20,52446,0.0,timeout,,,,,,,,,,,,,24,,61409187,1-00:00:21,6.1,killed at the wall-time limit (1-00:00:21) before reaching the 1% rule; no bounds saved
+n20_d1pct,cgip,20,104885,18.62155846226364,timeout,,,,,,,,,,,,,24,,60955157,1-00:00:28,46.5,killed at the wall-time limit (1-00:00:28) before reaching the 1% rule; no bounds saved
+n20_d1pct,cgip_heur_rand,20,104885,18.62155846226364,timeout,,,,,,,,,,,,,24,,60955158,1-00:00:19,45.5,killed at the wall-time limit (1-00:00:19) before reaching the 1% rule; no bounds saved
+n20_d1pct,cgip_heur_rand_R10,20,104885,18.62155846226364,solved,18.80751465200469,0.0,0.009986070184076707,0.1859561897410522,True,472,472,0,12.184652765281498,847.4539476614445,859.638600426726,2948.262570246,24,r816u09n02.grace.ycrc.yale.edu,61409188,00:14:27,1.7,
+n20_d1pct_lam5,cgip,20,104885,9.10783546931285,timeout,,,,,,,,,,,,,24,,60955159,1-00:00:08,48.5,killed at the wall-time limit (1-00:00:08) before reaching the 1% rule; no bounds saved
+n20_d1pct_lam5,cgip_heur_rand,20,104885,9.10783546931285,timeout,,,,,,,,,,,,,24,,60955160,1-00:00:18,49.3,killed at the wall-time limit (1-00:00:18) before reaching the 1% rule; no bounds saved
+n20_d1pct_lam5,cgip_heur_rand_R10,20,104885,9.10783546931285,timeout,,,,,,,,,,,,,24,,61409189,1-00:00:08,60.0,killed at the wall-time limit (1-00:00:08) before reaching the 1% rule; no bounds saved
+n20_d1pct_lam10,cgip,20,104885,0.0,timeout,,,,,,,,,,,,,24,,60955161,1-00:00:18,49.9,killed at the wall-time limit (1-00:00:18) before reaching the 1% rule; no bounds saved
+n20_d1pct_lam10,cgip_heur_rand,20,104885,0.0,timeout,,,,,,,,,,,,,24,,60955162,1-00:00:17,10.8,killed at the wall-time limit (1-00:00:17) before reaching the 1% rule; no bounds saved
+n20_d1pct_lam10,cgip_heur_rand_R10,20,104885,0.0,timeout,,,,,,,,,,,,,24,,61409190,1-00:00:04,10.3,killed at the wall-time limit (1-00:00:04) before reaching the 1% rule; no bounds saved
+n20_m1380,cgip,20,524403,42.362643994818754,out_of_memory,,,,,,,,,,,,,24,,60955163,07:26:32,96.0,killed at the 96 GB limit after 07:26:32; no bounds saved
+n20_m1380,cgip_heur_rand,20,524403,42.362643994818754,solved,42.78448566918085,0.0,0.00995786935333152,0.4218416743620992,True,298,298,0,71.93505273107439,1003.0412904750556,1074.97634320613,2500.308948063,24,r912u28n03.grace.ycrc.yale.edu,60955164,00:18:07,4.8,
+n20_m1380,cgip_heur_rand_R10,20,524403,42.362643994818754,solved,42.78612445322017,0.0,0.009996554002937325,0.42348045840141424,True,240,240,0,62.361996299936436,3310.289152304991,3372.6511486049276,4195.318200554,24,r815u09n02.grace.ycrc.yale.edu,61409191,00:56:21,4.3,
+n20_m1380_lam5,cgip,20,524403,21.00538254043676,out_of_memory,,,,,,,,,,,,,24,,60955165,09:47:33,96.0,killed at the 96 GB limit after 09:47:33; no bounds saved
+n20_m1380_lam5,cgip_heur_rand,20,524403,21.00538254043676,solved,21.215414793267858,0.0,0.009998972997838635,0.21003225283109828,True,1164,1164,0,62.203983017243445,3950.061721580103,4012.2657045973465,20161.050783305,24,r815u35n03.grace.ycrc.yale.edu,60955166,01:07:00,11.5,
+n20_m1380_lam5,cgip_heur_rand_R10,20,524403,21.00538254043676,solved,21.215431608256857,0.0,0.009999773506420997,0.2100490678200977,True,839,839,0,61.17745763703715,12059.878206987982,12121.055664625019,19738.309733852002,24,r815u09n02.grace.ycrc.yale.edu,61409192,03:22:08,8.8,
+n20_m1380_lam10,cgip,20,524403,0.0,out_of_memory,,,,,,,,,,,,,24,,60955167,02:25:40,96.0,killed at the 96 GB limit after 02:25:40; no bounds saved
+n20_m1380_lam10,cgip_heur_rand,20,524403,0.0,timeout,,,,,,,,,,,,,24,,60955168,1-00:00:29,42.9,killed at the wall-time limit (1-00:00:29) before reaching the 1% rule; no bounds saved
+n20_m1380_lam10,cgip_heur_rand_R10,20,524403,0.0,timeout,,,,,,,,,,,,,24,,61409193,1-00:00:00,33.6,killed at the wall-time limit (1-00:00:00) before reaching the 1% rule; no bounds saved

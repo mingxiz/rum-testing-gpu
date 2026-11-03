@@ -1,0 +1,31 @@
+key,n,mp,opt,status,UB,LB,gap_rel,gap_abs,stopped_by_rule,iters,n_columns,ip_calls,build_s,solve_s,total_s,cpu_s,threads,host,job_id,elapsed,peak_mem_gb,note
+n18_sparse,18,306,1.7576519699119626,solved,1.7744179767802455,1.6564257555066257,0.009538866143746686,0.01676600686828289,True,52,52,51,0.030658313538879156,4.344504945911467,4.375163,17.739343950000002,24,r912u28n02.grace.ycrc.yale.edu,60885139,00:00:13,0.5,
+n18_m2,18,613,0.9602181751234163,timeout,,,,,,,,,,,,,24,,60885140,1-00:00:03,6.1,killed at the 24 h limit before reaching the 1% rule; no bounds saved
+n18_m4,18,1234,1.5361982740324924,timeout,,,,,,,,,,,,,24,,60885141,1-00:00:28,8.9,killed at the 24 h limit before reaching the 1% rule; no bounds saved
+n18_m8,18,2455,2.555967707183093,timeout,,,,,,,,,,,,,24,,60885142,1-00:00:29,13.4,killed at the 24 h limit before reaching the 1% rule; no bounds saved
+n18_m15,18,4596,3.7108164036400475,timeout,,,,,,,,,,,,,24,,60885143,1-00:00:29,9.7,killed at the 24 h limit before reaching the 1% rule; no bounds saved
+n18_m23,18,7039,4.760210923600958,timeout,,,,,,,,,,,,,24,,60885144,1-00:00:29,12.5,killed at the 24 h limit before reaching the 1% rule; no bounds saved
+n18_m39,18,11939,6.5690200553228335,timeout,,,,,,,,,,,,,24,,60885145,1-00:00:29,13.0,killed at the 24 h limit before reaching the 1% rule; no bounds saved
+n18_m54,18,16530,7.872406586168034,timeout,,,,,,,,,,,,,24,,60885146,1-00:00:29,16.8,killed at the 24 h limit before reaching the 1% rule; no bounds saved
+n18_d1pct,18,23568,9.464462300929641,timeout,,,,,,,,,,,,,24,,60885147,1-00:00:28,18.6,killed at the 24 h limit before reaching the 1% rule; no bounds saved
+n18_m771,18,235931,31.427280692626173,timeout,,,,,,,,,,,,,24,,60885148,1-00:00:28,88.7,killed at the 24 h limit before reaching the 1% rule; no bounds saved
+n19_sparse,19,342,1.8646274623527441,solved,1.8828722074974393,1.7670469747180684,0.009784659677635772,0.018244745144695207,True,57,57,56,0.035449800081551075,11.319616776891053,11.355067,78.13466762200001,24,r912u32n04.grace.ycrc.yale.edu,60885149,00:00:19,0.6,
+n19_m4,19,1370,1.6329672829950848,timeout,,,,,,,,,,,,,24,,60885150,1-00:00:28,10.4,killed at the 24 h limit before reaching the 1% rule; no bounds saved
+n19_m7,19,2400,2.3867275221546453,timeout,,,,,,,,,,,,,24,,60885151,1-00:00:28,18.4,killed at the 24 h limit before reaching the 1% rule; no bounds saved
+n19_m15,19,5135,3.74791200127284,timeout,,,,,,,,,,,,,24,,60885152,1-00:00:28,13.8,killed at the 24 h limit before reaching the 1% rule; no bounds saved
+n19_m29,19,9927,5.518907345975665,timeout,,,,,,,,,,,,,24,,60885153,1-00:00:28,16.3,killed at the 24 h limit before reaching the 1% rule; no bounds saved
+n19_m44,19,15057,7.040612393116008,timeout,,,,,,,,,,,,,24,,60885154,1-00:00:28,17.6,killed at the 24 h limit before reaching the 1% rule; no bounds saved
+n19_m73,19,24967,9.225688885990381,timeout,,,,,,,,,,,,,24,,60885155,1-00:00:28,19.4,killed at the 24 h limit before reaching the 1% rule; no bounds saved
+n19_m102,19,34884,11.058197535264739,timeout,,,,,,,,,,,,,24,,60885156,1-00:00:28,24.4,killed at the 24 h limit before reaching the 1% rule; no bounds saved
+n19_d1pct,19,49935,13.403555847968894,timeout,,,,,,,,,,,,,24,,60885157,1-00:00:28,30.2,killed at the 24 h limit before reaching the 1% rule; no bounds saved
+n19_m1456,19,497956,43.48825245260118,out_of_memory,,,,,,,,,,,,,24,,60885158,04:05:26,96.0,killed at the 96 GB limit; no bounds saved
+n20_sparse,20,380,1.8761254028217615,solved,1.8946737090704888,1.8000708319906353,0.009886495977736852,0.018548306248727275,True,68,68,67,0.03558358596637845,12.121149038895965,12.156733,86.680649056,24,r816u03n05.grace.ycrc.yale.edu,60885159,00:00:17,0.3,
+n20_m8,20,3051,2.5459528492021577,timeout,,,,,,,,,,,,,24,,60885160,1-00:00:24,15.9,killed at the 24 h limit before reaching the 1% rule; no bounds saved
+n20_m14,20,5320,3.5801255546724127,timeout,,,,,,,,,,,,,24,,60885161,1-00:00:24,20.0,killed at the 24 h limit before reaching the 1% rule; no bounds saved
+n20_m28,20,10640,5.4469044261078485,timeout,,,,,,,,,,,,,24,,60885162,1-00:00:24,16.7,killed at the 24 h limit before reaching the 1% rule; no bounds saved
+n20_m55,20,20900,7.983697656910277,timeout,,,,,,,,,,,,,24,,60885163,1-00:00:24,18.3,killed at the 24 h limit before reaching the 1% rule; no bounds saved
+n20_m83,20,31543,9.899008931450116,timeout,,,,,,,,,,,,,24,,60885164,1-00:00:21,22.5,killed at the 24 h limit before reaching the 1% rule; no bounds saved
+n20_m138,20,52446,13.027603024065435,timeout,,,,,,,,,,,,,24,,60885165,1-00:00:21,29.9,killed at the 24 h limit before reaching the 1% rule; no bounds saved
+n20_m193,20,73342,15.4540355954838,timeout,,,,,,,,,,,,,24,,60885166,1-00:00:08,39.4,killed at the 24 h limit before reaching the 1% rule; no bounds saved
+n20_d1pct,20,104885,18.62155846226364,timeout,,,,,,,,,,,,,24,,60885167,1-00:00:06,46.6,killed at the 24 h limit before reaching the 1% rule; no bounds saved
+n20_m2759,20,1048422,60.17651345477622,timeout,,,,,,,,,,,,,24,,60885168,1-00:00:09,61.4,killed at the 24 h limit before reaching the 1% rule; no bounds saved

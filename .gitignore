@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+data/instances/
+data/cache_mhat/
+validation/results/*
+!validation/results/.gitkeep
+paper/
+*.checkpoint
+
+# macOS metadata
+.DS_Store

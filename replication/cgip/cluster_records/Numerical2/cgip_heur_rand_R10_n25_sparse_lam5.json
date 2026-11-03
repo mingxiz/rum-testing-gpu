@@ -1,0 +1,20 @@
+{
+  "key": "n25_sparse_lam5",
+  "method": "cgip_heur_rand_R10",
+  "n": 25,
+  "mp": 600,
+  "opt": 0.30619033513389443,
+  "UB": 0.3091963467677589,
+  "LB": 0.16385163461994778,
+  "gap_rel": 0.009817460869723365,
+  "gap_abs": 0.0030060116338644916,
+  "stopped_by_rule": true,
+  "iters": 563,
+  "n_columns": 563,
+  "ip_calls": 1,
+  "build_s": 0.06896847207099199,
+  "solve_s": 42.6680651595816,
+  "cpu_s": 684.744488332,
+  "threads": 24,
+  "host": "r815u15n05.grace.ycrc.yale.edu"
+}

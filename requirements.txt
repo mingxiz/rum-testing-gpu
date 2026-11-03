@@ -1,0 +1,8 @@
+numpy>=1.26
+scipy>=1.11
+numba>=0.59
+pandas>=2.0
+# GPU methods (BM-ADMM, Flow-ADMM, Flow-CG): the CuPy wheel matching your CUDA driver (cupy-cuda12x for CUDA 12)
+cupy-cuda13x>=13.0 ; platform_system != "Darwin"
+# CPU methods (IP-CG, IP-H-CG, the exact QPs) and the no-GPU fallback: gurobipy and a Gurobi licence
+# gurobipy>=11.0

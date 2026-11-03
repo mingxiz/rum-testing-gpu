@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paper Replication</title>
+<meta name="description" content="Every table of the paper traced to its data, the command that reproduces it, the stored records and its CSV in final_results.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --surface-2: #eaeef3;
+  --ink: #16202b;
+  --ink-2: #4a5667;
+  --ink-3: #737f8f;
+  --rule: #d6dce4;
+  --gpu: #1b5aad;
+  --gpu-soft: #e2ebf8;
+  --cpu: #1e7352;
+  --cpu-soft: #def0e7;
+  --old: #96580b;
+  --old-soft: #f8ecd8;
+  --link: #1b5aad;
+  --code-bg: #edf1f5;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0e1318;
+    --surface: #161c23;
+    --surface-2: #1d252e;
+    --ink: #e1e7ee;
+    --ink-2: #a2adba;
+    --ink-3: #7d8998;
+    --rule: #2b3541;
+    --gpu: #7cb0f3;
+    --gpu-soft: #172a42;
+    --cpu: #63c89d;
+    --cpu-soft: #132b20;
+    --old: #e5ab5a;
+    --old-soft: #302410;
+    --link: #7cb0f3;
+    --code-bg: #1c242d;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0e1318;
+  --surface: #161c23;
+  --surface-2: #1d252e;
+  --ink: #e1e7ee;
+  --ink-2: #a2adba;
+  --ink-3: #7d8998;
+  --rule: #2b3541;
+  --gpu: #7cb0f3;
+  --gpu-soft: #172a42;
+  --cpu: #63c89d;
+  --cpu-soft: #132b20;
+  --old: #e5ab5a;
+  --old-soft: #302410;
+  --link: #7cb0f3;
+  --code-bg: #1c242d;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: 16px; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.6 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+a { color: var(--link); text-underline-offset: 2px; }
+a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-radius: 3px; }
+code, pre { font-family: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace; }
+code { font-size: .88em; background: var(--code-bg); padding: .08em .32em; border-radius: 4px; }
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 0;
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.55;
+}
+pre code { background: none; padding: 0; font-size: inherit; }
+.cm { color: var(--ink-3); }
+h1, h2, h3, h4 {
+  font-family: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
+  line-height: 1.2;
+  margin: 0;
+  text-wrap: balance;
+}
+h1 { font-size: clamp(2rem, 4.2vw, 2.7rem); font-weight: 600; letter-spacing: -.01em; }
+h2 {
+  font-size: 1.55rem;
+  font-weight: 600;
+  margin: 56px 0 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
+}
+h2 .num { font-family: "IBM Plex Mono", monospace; font-size: .8em; color: var(--ink-3); font-weight: 500; margin-right: .35em; }
+h3 { font-size: 1.18rem; font-weight: 600; }
+h4 {
+  font-size: .76rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--ink-2);
+  margin: 18px 0 6px;
+}
+p, li { max-width: 72ch; }
+p { margin: 10px 0; }
+ul, ol { padding-left: 1.3em; }
+li { margin: 4px 0; }
+
+.wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+header.top { padding: 40px 0 4px; }
+.eyebrow { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--ink-2); letter-spacing: .02em; margin: 0 0 10px; }
+.lede { font-size: 1.1rem; color: var(--ink-2); max-width: 66ch; margin: 14px 0 0; }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; }
+nav.toc { font-size: 14px; }
+nav.toc h4 { margin-top: 0; }
+nav.toc ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 1px; }
+nav.toc li { margin: 0; }
+nav.toc a { display: block; padding: 4px 8px; border-radius: 4px; color: var(--ink-2); text-decoration: none; }
+nav.toc a:hover { background: var(--surface-2); color: var(--ink); }
+@media (min-width: 1100px) {
+  .layout { grid-template-columns: 200px minmax(0, 1fr); gap: 40px; }
+  nav.toc { position: sticky; top: 20px; align-self: start; max-height: calc(100vh - 40px); overflow: auto; padding-top: 6px; }
+}
+@media (max-width: 1099px) {
+  nav.toc { border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding: 10px 0; }
+  nav.toc ol { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+}
+main { min-width: 0; max-width: 880px; padding-bottom: 72px; }
+
+/* summary rows */
+.facts-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  margin: 22px 0 0;
+}
+.facts-row div { padding: 10px 14px 10px 0; }
+.facts-row dt { font-size: 11.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-2); }
+.facts-row dd { margin: 2px 0 0; font-weight: 500; }
+.status { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; margin: 22px 0 0; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 16px; }
+.card h3 { font-size: 1.05rem; margin: 10px 0 4px; }
+.card p { margin: 4px 0 0; font-size: 15px; }
+.pill { display: inline-block; font: 600 11.5px/1 "IBM Plex Mono", monospace; padding: 5px 8px; border-radius: 999px; letter-spacing: .02em; }
+.pill-ok { background: var(--cpu-soft); color: var(--cpu); }
+.pill-plan { background: var(--old-soft); color: var(--old); }
+
+/* figures */
+figure { margin: 22px 0; }
+.fig-frame { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 12px; overflow-x: auto; }
+svg.dia { display: block; width: 100%; min-width: 780px; height: auto; color: var(--ink); }
+figcaption { font-size: 14px; color: var(--ink-2); margin-top: 8px; max-width: 76ch; }
+.dia text { fill: var(--ink); font-family: "IBM Plex Sans", system-ui, sans-serif; font-size: 12.5px; }
+.dia .t-title { font-family: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif; font-weight: 600; font-size: 14.5px; }
+.dia .t-mono { font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace; font-size: 12px; }
+.dia .t-monob { font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace; font-size: 12.5px; font-weight: 600; }
+.dia .t-sm { font-size: 11.5px; fill: var(--ink-2); }
+.dia .t-xs { font-size: 10.5px; fill: var(--ink-2); }
+.dia .t-gpu { fill: var(--gpu); font-weight: 600; font-size: 12px; }
+.dia .t-cpu { fill: var(--cpu); font-weight: 600; font-size: 12px; }
+.dia .t-old { fill: var(--old); font-weight: 600; font-size: 12px; }
+.dia .box { fill: var(--surface); stroke: var(--rule); stroke-width: 1.2; }
+.dia .box-new { fill: var(--surface); stroke: var(--ink); stroke-width: 1.8; }
+.dia .box-gpu { fill: var(--gpu-soft); stroke: var(--gpu); stroke-width: 1.2; }
+.dia .box-cpu { fill: var(--cpu-soft); stroke: var(--cpu); stroke-width: 1.2; }
+.dia .box-old { fill: var(--old-soft); stroke: var(--old); stroke-width: 1.3; stroke-dasharray: 6 4; }
+.dia .box-tray { fill: var(--surface-2); stroke: var(--rule); stroke-width: 1; }
+.dia .chip { fill: var(--surface); stroke: var(--rule); stroke-width: 1; }
+.dia .arrow { stroke: var(--ink-2); stroke-width: 1.4; fill: none; }
+.dia .arrow-dash { stroke: var(--ink-2); stroke-width: 1.3; fill: none; stroke-dasharray: 5 4; }
+.dia .ah { fill: var(--ink-2); }
+.dia .tick { stroke: var(--ink-2); stroke-width: 1.4; }
+.dia .bar-32 { fill: var(--gpu); }
+.dia .bar-big { fill: var(--gpu-soft); stroke: var(--gpu); stroke-width: 1; stroke-dasharray: 3 2; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--ink-2); margin-top: 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 18px; height: 12px; border-radius: 3px; display: inline-block; }
+.sw-new { background: var(--surface); border: 1.8px solid var(--ink); }
+.sw-old { background: var(--old-soft); border: 1.4px dashed var(--old); }
+.sw-gpu { background: var(--gpu-soft); border: 1.2px solid var(--gpu); }
+.sw-cpu { background: var(--cpu-soft); border: 1.2px solid var(--cpu); }
+.sw-32 { background: var(--gpu); }
+.sw-big { background: var(--gpu-soft); border: 1px dashed var(--gpu); }
+
+/* tables */
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; font-variant-numeric: tabular-nums; }
+th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  border-bottom: 1.5px solid var(--ink-3);
+  padding: 6px 14px 6px 0;
+  white-space: nowrap;
+}
+td { border-bottom: 1px solid var(--rule); padding: 7px 14px 7px 0; vertical-align: top; }
+td.num, th.num { text-align: right; }
+td.nowrap { white-space: nowrap; }
+.fast { font-weight: 600; }
+.capped { color: var(--old); }
+tr.group td { padding-top: 14px; font-weight: 600; color: var(--ink-2); font-size: 12.5px; text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid var(--rule); }
+.flag { font-family: "IBM Plex Mono", monospace; font-weight: 600; white-space: nowrap; }
+
+/* method cards */
+.method { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 20px 22px; margin: 18px 0; }
+.method-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.method-head h3 code { font-size: 1.12em; background: none; padding: 0; }
+.tag { font: 500 11.5px/1 "IBM Plex Mono", monospace; padding: 5px 7px; border-radius: 4px; border: 1px solid var(--rule); color: var(--ink-2); white-space: nowrap; }
+.tag-gpu { background: var(--gpu-soft); color: var(--gpu); border-color: transparent; }
+.tag-cpu { background: var(--cpu-soft); color: var(--cpu); border-color: transparent; }
+.paper { margin-left: auto; font-size: 13px; color: var(--ink-2); }
+.method .lede-m { margin: 10px 0 4px; color: var(--ink-2); }
+dl.kv { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px 18px; margin: 14px 0 6px; }
+@media (min-width: 700px) { dl.kv { grid-template-columns: 124px minmax(0, 1fr); } }
+dl.kv dt { font-weight: 600; font-size: 13.5px; color: var(--ink-2); padding-top: 1px; }
+dl.kv dd { margin: 0 0 9px; max-width: 70ch; }
+.calls { display: grid; gap: 10px; margin-top: 8px; }
+.calls h4 { margin: 8px 0 4px; }
+.watch { margin: 14px 0 0; font-size: 15px; }
+.watch strong { color: var(--old); }
+
+.steps { counter-reset: step; list-style: none; padding: 0; }
+.steps > li { counter-increment: step; position: relative; padding-left: 2.2em; margin: 14px 0; max-width: none; }
+.steps > li::before {
+  content: counter(step);
+  position: absolute; left: 0; top: .05em;
+  font: 600 13px/1.6em "IBM Plex Mono", monospace;
+  width: 1.6em; height: 1.6em; text-align: center;
+  border-radius: 50%; background: var(--surface-2); color: var(--ink);
+}
+.steps > li > p { max-width: 70ch; }
+.note { color: var(--ink-2); font-size: 14.5px; }
+footer { border-top: 1px solid var(--rule); margin-top: 48px; padding-top: 14px; font-size: 13.5px; color: var(--ink-2); }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+/* the four pages share one header bar */
+nav.site { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 14px 0 12px; border-bottom: 1px solid var(--rule); font-size: 14px; }
+nav.site .brand { font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace; font-weight: 600; font-size: 13.5px; color: var(--ink); text-decoration: none; margin-right: 14px; }
+nav.site a.pg { color: var(--ink-2); text-decoration: none; padding: 4px 10px; border-radius: 4px; }
+nav.site a.pg:hover { background: var(--surface-2); color: var(--ink); }
+nav.site a.pg[aria-current="page"] { color: var(--ink); background: var(--surface); box-shadow: inset 0 0 0 1px var(--rule); font-weight: 500; }
+nav.site .gh { margin-left: auto; color: var(--ink-2); font-size: 13.5px; text-decoration: none; }
+nav.site .gh:hover { color: var(--link); text-decoration: underline; }
+nav.site + header.top { padding-top: 28px; }
+
+/* index and replication */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 14px 0; }
+.cards .card h3 { margin: 6px 0 4px; }
+.cards .card h3 a { text-decoration: none; }
+.cards .card h3 a:hover { text-decoration: underline; }
+.where { display: block; font-size: 12.5px; color: var(--ink-2); margin-top: 2px; }
+table.paths td code { overflow-wrap: anywhere; }
+.result .method-head h3 { font-size: 1.12rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="site" aria-label="Pages">
+  <a class="brand" href="index.html">rum-testing-gpu</a>
+  <a class="pg" href="index.html">Overview</a>
+  <a class="pg" href="solver.html">Solvers</a>
+  <a class="pg" href="bootstrap.html">Bootstrap</a>
+  <a class="pg" href="replication.html" aria-current="page">Replication</a>
+  <a class="gh" href="https://github.com/mingxiz/rum-testing-gpu">Source on GitHub</a>
+</nav>
+<header class="top">
+  <p class="eyebrow">rum-testing-gpu · replication/</p>
+  <h1>Paper Replication</h1>
+  <p class="lede">Every table of the paper's numerical and application sections, traced to its data, the command that reproduces it, the records it was built from and its CSV in <code>final_results/</code>. The GPU columns were run on one desktop; IP-CG and IP-H-CG on a CPU cluster.</p>
+  <dl class="facts-row">
+    <div><dt>Data</dt><dd><code>final_data/</code></dd></div>
+    <div><dt>Records</dt><dd><code>replication/*/results/</code></dd></div>
+    <div><dt>Release CSVs</dt><dd><code>final_results/</code></dd></div>
+    <div><dt>GPU desktop</dt><dd>RTX 5090 · Ryzen 9 9950X</dd></div>
+  </dl>
+</header>
+
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+  <h4>Contents</h4>
+  <ol>
+    <li><a href="#glance">1 · At a glance</a></li>
+    <li><a href="#names">2 · Names</a></li>
+    <li><a href="#paths">3 · How a number is made</a></li>
+    <li><a href="#grid">4 · tab:density18–20</a></li>
+    <li><a href="#binary">5 · tab:binary</a></li>
+    <li><a href="#dense">6 · tab:dense</a></li>
+    <li><a href="#dsg">7 · tab:dsg</a></li>
+    <li><a href="#ai">8 · tab:ai</a></li>
+    <li><a href="#ip">9 · IP-CG and IP-H-CG</a></li>
+    <li><a href="#protocol">10 · Protocol and hardware</a></li>
+    <li><a href="#rerun">11 · Running it again</a></li>
+    <li><a href="#other">12 · Other folders</a></li>
+  </ol>
+</nav>
+
+<main>
+<h2 id="glance"><span class="num">1</span>At a glance</h2>
+<div class="tbl-wrap">
+<table class="paths">
+  <thead><tr><th>Paper result</th><th>Data</th><th>Reproduce with</th><th>Stored records</th><th><code>final_results/<wbr></code></th></tr></thead>
+  <tbody>
+    <tr><td><a href="#grid">tab:density18–20</a><span class="where">n = 18 (main text), 19, 20 (appendix)</span></td><td><code>Numerical1/<wbr></code>, generated by <code>data/<wbr>gen_instances.py</code></td><td><code>replication/<wbr>density_grid/<wbr>reproduce.py</code></td><td><code>replication/<wbr>density_grid/<wbr>results/<wbr></code></td><td><code>Numerical1/<wbr>results_n{18,19,20}.csv</code></td></tr>
+    <tr><td><a href="#binary">tab:binary</a><span class="where">binary menus, n = 25–35</span></td><td><code>Numerical2/<wbr></code>, generated</td><td><code>validation/<wbr>run_lambda_study.py --task 1</code></td><td><code>replication/<wbr>feasibility_in_n/<wbr>results/<wbr></code>, <code>replication/<wbr>convex_path/<wbr>results/<wbr></code></td><td><code>Numerical2/<wbr>results_pairwise.csv</code></td></tr>
+    <tr><td><a href="#dense">tab:dense</a><span class="where">dense menus, n = 20</span></td><td><code>Numerical3/<wbr></code>, generated</td><td><code>validation/<wbr>run_lambda_study.py --task 2 3</code></td><td><code>replication/<wbr>density_grid/<wbr>results/<wbr></code>, <code>replication/<wbr>feasibility_in_density/<wbr>results/<wbr></code></td><td><code>Numerical3/<wbr>results_density.csv</code></td></tr>
+    <tr><td><a href="#dsg">tab:dsg</a><span class="where">choice overload, n = 25</span></td><td><code>Application_DSR/<wbr>raw_data/<wbr>overload_data_25_long.csv</code></td><td><code>replication/<wbr>empirical_dsr_n25/<wbr>run_bootstrap.py</code></td><td><code>replication/<wbr>empirical_dsr_n25/<wbr>results/<wbr></code></td><td><code>Application_DSR/<wbr>results_dsr.csv</code></td></tr>
+    <tr><td><a href="#ai">tab:ai</a> and the AI intervals<span class="where">LLM choice, n = 18</span></td><td><code>Application_AI/<wbr>raw_data/<wbr>gpt6luna_noreason.npz</code>, <code>gmicloud.npz</code></td><td><code>replication/<wbr>empirical_ai_n18/<wbr>run_bootstrap.py</code></td><td><code>replication/<wbr>empirical_ai_n18/<wbr>results/<wbr></code></td><td><code>Application_AI/<wbr>results_ai.csv</code></td></tr>
+    <tr><td><a href="#ip">IP-CG, IP-H-CG</a><span class="where">their columns in every table</span></td><td>as above</td><td><code>replication/<wbr>cgip/<wbr>run_cgip.py</code></td><td><code>replication/<wbr>cgip/<wbr>cluster_records/<wbr></code></td><td>the CGIP and CGIP-heur rows</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="note">Data paths are under <code>final_data/</code>. The synthetic tables are races: the time until a method holds a feasible point within 1 % of a certified optimum OPT, or within 1e-3 of it where OPT = 0. OPT is the objective of a feasible point whose certified bracket satisfies (UB − LB)/LB ≤ 1e-3.</p>
+
+<h2 id="names"><span class="num">2</span>Names</h2>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Paper</th><th>Code method</th><th>Label in <code>final_results/</code></th><th>Runs on</th></tr></thead>
+  <tbody>
+    <tr><td>BM-ADMM</td><td><code>bm_admm</code></td><td>BM-ADMM</td><td>GPU</td></tr>
+    <tr><td>Flow-ADMM</td><td><code>flow_admm</code></td><td>Flow-ADMM</td><td>GPU</td></tr>
+    <tr><td>Flow-CG</td><td><code>flow_cg</code></td><td>CGBFQP-GPU</td><td>GPU pricing, CPU master QP</td></tr>
+    <tr><td>IP-CG</td><td><code>ip_cg</code></td><td>CGIP</td><td>CPU, Gurobi</td></tr>
+    <tr><td>IP-H-CG</td><td><code>ip_cg_heur</code>, 10 random-insertion restarts per pricing call</td><td>CGIP-heur</td><td>CPU, Gurobi</td></tr>
+  </tbody>
+</table>
+</div>
+<p>The AI data sets: the paper's <strong>GPT-6 Luna</strong> is <code>gpt6luna_noreason</code> (<code>gpt-6-luna-noreason</code> in the CSV), and its <strong>DeepSeek V4 Flash</strong> is <code>gmicloud</code> (<code>gmi-cloud</code>), the model queried through GMI Cloud. Both put each of 8,807 menus to the model 2,000 times. The 100-reply sets <code>gpt5.6-luna</code> and <code>deepseekv4-flash</code> (<code>gpt-5.6-luna</code>, <code>deepseek-v4-flash</code>) are the data of the cluster's IP-CG and IP-H-CG AI runs.</p>
+
+<h2 id="paths"><span class="num">3</span>How a number is made</h2>
+<figure>
+  <div class="fig-frame">
+  <svg class="dia" viewBox="0 0 880 330" role="img" aria-label="Three paths from data to the release CSVs. Synthetic tables: the instances in final_data, checked against the generator's fingerprint, are raced once per cell and solver in a fresh process on the GPU desktop; each run writes a record in replication, and the builders write final_results and the LaTeX tables. Applications: the DSR panel and the AI reply tables go through run_bootstrap.py and rum.bootstrap to a record, and make_final_results_apps writes final_results. IP-CG and IP-H-CG: the same instances were run on a CPU cluster with an earlier version of the CGIP code; their records are in replication/cgip/cluster_records and the same builders read them.">
+    <defs>
+      <marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path class="ah" d="M0,0 L10,5 L0,10 z"/>
+      </marker>
+    </defs>
+    <text class="t-sm" x="16" y="26" font-weight="600">Synthetic tables · tab:density18–20, tab:binary, tab:dense</text>
+    <rect class="box" x="16" y="36" width="190" height="64" rx="6"/>
+    <text class="t-mono" x="28" y="58">final_data/Numerical*/</text>
+    <text class="t-sm" x="28" y="75">instances and OPT;</text>
+    <text class="t-sm" x="28" y="92">fingerprint = generator's</text>
+    <line class="arrow" x1="206" y1="68" x2="233" y2="68" marker-end="url(#ahr)"/>
+    <rect class="box-gpu" x="236" y="36" width="200" height="64" rx="6"/>
+    <text class="t-mono" x="248" y="58">run_one · feas_one</text>
+    <text class="t-sm" x="248" y="75">one race per (cell, solver)</text>
+    <text class="t-sm" x="248" y="92">fresh process, idle GPU</text>
+    <line class="arrow" x1="436" y1="68" x2="463" y2="68" marker-end="url(#ahr)"/>
+    <rect class="box-new" x="466" y="36" width="180" height="64" rx="6"/>
+    <text class="t-mono" x="478" y="58">results/*.json</text>
+    <text class="t-sm" x="478" y="75">replication/&lt;folder&gt;/</text>
+    <text class="t-sm" x="478" y="92">full trajectory per run</text>
+    <line class="arrow" x1="646" y1="68" x2="673" y2="68" marker-end="url(#ahr)"/>
+    <rect class="box" x="676" y="36" width="188" height="64" rx="6"/>
+    <text class="t-mono" x="688" y="58">make_final_results</text>
+    <text class="t-sm" x="688" y="75">final_results/Numerical*/</text>
+    <text class="t-sm" x="688" y="92">+ paper/tables/*.tex</text>
+    <text class="t-sm" x="16" y="126" font-weight="600">Applications · tab:dsg, tab:ai</text>
+    <rect class="box" x="16" y="136" width="190" height="64" rx="6"/>
+    <text class="t-mono" x="28" y="158">Application_*/raw_data</text>
+    <text class="t-sm" x="28" y="175">the DSR panel,</text>
+    <text class="t-sm" x="28" y="192">the AI reply tables</text>
+    <line class="arrow" x1="206" y1="168" x2="233" y2="168" marker-end="url(#ahr)"/>
+    <rect class="box-gpu" x="236" y="136" width="200" height="64" rx="6"/>
+    <text class="t-mono" x="248" y="158">run_bootstrap.py</text>
+    <text class="t-sm" x="248" y="175">rum.bootstrap → Session</text>
+    <text class="t-sm" x="248" y="192">p-value and intervals</text>
+    <line class="arrow" x1="436" y1="168" x2="463" y2="168" marker-end="url(#ahr)"/>
+    <rect class="box-new" x="466" y="136" width="180" height="64" rx="6"/>
+    <text class="t-mono" x="478" y="158">bootstrap_*.json</text>
+    <text class="t-sm" x="478" y="175">replication/empirical_*/</text>
+    <text class="t-sm" x="478" y="192">every draw's bracket</text>
+    <line class="arrow" x1="646" y1="168" x2="673" y2="168" marker-end="url(#ahr)"/>
+    <rect class="box" x="676" y="136" width="188" height="64" rx="6"/>
+    <text class="t-mono" x="688" y="158">make_final_results_apps</text>
+    <text class="t-sm" x="688" y="175">final_results/</text>
+    <text class="t-sm" x="688" y="192">Application_*/</text>
+    <text class="t-sm" x="16" y="226" font-weight="600">IP-CG and IP-H-CG columns of every table</text>
+    <rect class="box" x="16" y="236" width="190" height="64" rx="6"/>
+    <text class="t-mono" x="28" y="258">final_data/</text>
+    <text class="t-sm" x="28" y="275">the same instances</text>
+    <text class="t-sm" x="28" y="292">and application data</text>
+    <line class="arrow" x1="206" y1="268" x2="233" y2="268" marker-end="url(#ahr)"/>
+    <rect class="box-cpu" x="236" y="236" width="200" height="64" rx="6"/>
+    <text class="t-title" x="248" y="258">Cluster runs</text>
+    <text class="t-sm" x="248" y="275">24 Gurobi threads each,</text>
+    <text class="t-sm" x="248" y="292">an earlier CGIP code</text>
+    <line class="arrow" x1="436" y1="268" x2="463" y2="268" marker-end="url(#ahr)"/>
+    <rect class="box-new" x="466" y="236" width="180" height="64" rx="6"/>
+    <text class="t-mono" x="478" y="258">cluster_records/</text>
+    <text class="t-sm" x="478" y="275">replication/cgip/</text>
+    <text class="t-sm" x="478" y="292">summaries, per-run files</text>
+    <line class="arrow" x1="646" y1="268" x2="673" y2="268" marker-end="url(#ahr)"/>
+    <rect class="box" x="676" y="236" width="188" height="64" rx="6"/>
+    <text class="t-mono" x="688" y="258">the same builders</text>
+    <text class="t-sm" x="688" y="275">the CGIP and CGIP-heur</text>
+    <text class="t-sm" x="688" y="292">rows of final_results</text>
+    <text class="t-sm" x="16" y="320">replication/cgip/run_cgip.py runs the IP-CG and IP-H-CG experiments with this release's solver.</text>
+  </svg>
+  </div>
+  <figcaption>How a number reaches <code>final_results/</code>. Blue: runs on the GPU desktop; green: runs on the CPU cluster; heavy outline: stored in the repository. A clean clone rebuilds every CSV and table from the stored records, without a GPU.</figcaption>
+  <div class="legend" aria-hidden="true"><span><i class="sw sw-gpu"></i>GPU desktop run</span><span><i class="sw sw-cpu"></i>CPU cluster run</span><span><i class="sw sw-new"></i>stored record</span></div>
+</figure>
+
+<p>A fresh run writes to <code>validation/results/</code>; the table builders read that first and fall back to the stored records in <code>replication/*/results/</code>, so a clean clone rebuilds every table and a new run can be compared with the stored one.</p>
+
+<h2 id="grid"><span class="num">4</span>tab:density18–20 · the n = 18, 19, 20 grid</h2>
+<article class="method result">
+  <div class="method-head"><h3>Four methods on 30 instances</h3><span class="tag tag-gpu">BM-ADMM · Flow-CG · Flow-ADMM</span><span class="tag tag-cpu">IP-CG</span></div>
+  <dl class="kv">
+    <dt>What</dt><dd>Ten densities per n: the pairwise design (every binary menu) and random menus at 0.025, 0.05, 0.1, 0.2, 0.3, 0.5, 0.7, 1 and 10 % of the n·2<sup>n−1</sup> cells. Each entry is the time to the stop rule, in seconds.</dd>
+    <dt>Data</dt><dd><code>final_data/Numerical1/raw_data/n{18,19,20}_*.csv</code>, one row per observed cell (menu bitmask, chosen alternative, p̂), and <code>opt_ref.json</code> with each cell's OPT and how it was certified.</dd>
+    <dt>Generator</dt><dd><code>data/gen_instances.py</code> with seeded streams: <code>gen_pairwise</code> for the pairwise cells (p̂ seed 100), <code>gen_medium</code> for the others (menu seed 42, p̂ seed 100). A run regenerates its instance and refuses to start if its sha256 fingerprint differs from the stored one.</dd>
+    <dt>Reproduce</dt><dd><code>python replication/density_grid/reproduce.py</code>: <code>validation/run_paper_table.py</code> starts <code>validation/run_one.py</code> once per (cell, solver), in a fresh process, on an idle GPU, one at a time.</dd>
+    <dt>Tables</dt><dd><code>python validation/make_lambda_tables.py</code> writes <code>paper/tables/tab_race_n{18,19,20}_l0.tex</code>; <code>python validation/make_final_results.py</code> writes <code>final_results/Numerical1/results_n{18,19,20}.csv</code>, which also hold the λ = 0.5 and 1 races of the same cells.</dd>
+    <dt>Records</dt><dd><code>replication/density_grid/results/</code>, one JSON per (cell, solver) with the full trajectory.</dd>
+    <dt>IP-CG</dt><dd>Cluster runs, <code>replication/cgip/cluster_records/Numerical1/</code>. At each n the pairwise cell finished; the other cells reached the 24 h cap, one n = 19 cell after running out of its 96 GB.</dd>
+  </dl>
+</article>
+
+<h2 id="binary"><span class="num">5</span>tab:binary · binary menus, n = 25–35</h2>
+<article class="method result">
+  <div class="method-head"><h3>Flow-CG at three points of the pairwise design</h3><span class="tag tag-gpu">Flow-CG</span><span class="tag tag-cpu">IP-CG · IP-H-CG</span></div>
+  <dl class="kv">
+    <dt>What</dt><dd>The pairwise design at n = 25, 27, 30, 32 and 35, at three points: outside the polytope (λ = 0), halfway (λ = 0.5) and inside it (λ = 1).</dd>
+    <dt>Data</dt><dd><code>final_data/Numerical2/raw_data/n&lt;n&gt;_sparse.csv</code> (outside), <code>_lam5</code> (halfway) and <code>_lam10</code> (inside), with <code>opt_ref.json</code>.</dd>
+    <dt>Generator</dt><dd>The outside point is the pairwise instance (<code>gen_pairwise</code>, seed 100). The inside point is the uniform rule 1/|D| on the same menus (<code>p_inside</code>), the choice probabilities of the uniform mixture over all rankings. The halfway point is their average (<code>gen_convex_path</code>, λ = 0.5). OPT is 0 inside and certified by Flow-CG otherwise.</dd>
+    <dt>Reproduce</dt><dd><code>python validation/run_lambda_study.py --task 1</code>: the certificates first (not timed), then each race through <code>validation/feasibility/feas_one.py</code>, in a fresh process on an idle GPU. A cell that already has a record in <code>validation/results/lambda_study/</code> is skipped.</dd>
+    <dt>Tables</dt><dd><code>validation/make_lambda_tables.py</code> writes <code>paper/tables/tab_fes_pairwise_l{1,05,0}.tex</code> (inside, halfway, outside); <code>validation/make_final_results.py</code> writes <code>final_results/Numerical2/results_pairwise.csv</code>.</dd>
+    <dt>Records</dt><dd>Outside: <code>replication/feasibility_in_n/results/</code>; inside and halfway: <code>replication/convex_path/results/</code>. n = 35 uses the two-layer uint24 pricing.</dd>
+    <dt>IP-CG, IP-H-CG</dt><dd><code>replication/cgip/cluster_records/Numerical2/</code>. Each finished 14 of the 15 cells; the caps were 24 h for n ≤ 30 and 7 days for n = 32 and 35.</dd>
+  </dl>
+</article>
+
+<h2 id="dense"><span class="num">6</span>tab:dense · dense menus, n = 20</h2>
+<article class="method result">
+  <div class="method-head"><h3>BM-ADMM at four densities</h3><span class="tag tag-gpu">BM-ADMM</span><span class="tag tag-cpu">IP-CG · IP-H-CG</span></div>
+  <dl class="kv">
+    <dt>What</dt><dd>n = 20 at 0.1, 0.5, 1 and 5 % density, at the same three points as tab:binary.</dd>
+    <dt>Data</dt><dd><code>final_data/Numerical3/raw_data/n20_{m28,m138,d1pct,m1380}*.csv</code>, with <code>opt_ref.json</code>.</dd>
+    <dt>Generator</dt><dd>The grid's random-menu instances (<code>gen_medium</code>) and their halfway and inside points (<code>gen_convex_path</code>). OPT: Flow-CG certificates up to 1 %, a BM-ADMM certificate at 5 %, and 0 inside.</dd>
+    <dt>Reproduce</dt><dd><code>python validation/run_lambda_study.py --task 2 3</code>: task 2 races the 0.5, 1 and 5 % cells through <code>feas_one.py</code>; the 0.1 % cells are grid cells, raced by task 3 through <code>run_one.py</code>.</dd>
+    <dt>Tables</dt><dd><code>validation/make_lambda_tables.py</code> writes <code>paper/tables/tab_fes_density_l{1,05,0}.tex</code>; <code>validation/make_final_results.py</code> writes <code>final_results/Numerical3/results_density.csv</code>.</dd>
+    <dt>Records</dt><dd><code>replication/density_grid/results/</code> for the 0.1 % cells and the 0.5 % outside cell, <code>replication/feasibility_in_density/results/</code> for the rest.</dd>
+    <dt>IP-CG, IP-H-CG</dt><dd><code>replication/cgip/cluster_records/Numerical3/</code>. IP-CG reached the 24 h cap or ran out of its 96 GB on every cell; IP-H-CG finished 3 of the 12.</dd>
+  </dl>
+</article>
+
+<h2 id="dsg"><span class="num">7</span>tab:dsg · choice overload, n = 25</h2>
+<article class="method result">
+  <div class="method-head"><h3>The Hong–Li test on the choice-overload data</h3><span class="tag tag-gpu">Flow-CG</span><span class="tag tag-cpu">IP-CG · IP-H-CG</span></div>
+  <dl class="kv">
+    <dt>What</dt><dd>The bootstrap test of RUM with B = 10,000 draws, on two specifications: the default alternative only (alt0, M = 301 cells) and all alternatives (full, M = 901).</dd>
+    <dt>Data</dt><dd><code>final_data/Application_DSR/raw_data/overload_data_25_long.csv</code>, the pilot data of Dean et al. that the paper cites: 520 respondents, each answering 10 of the 301 menus (the 24 binary and 276 ternary menus with the default, and the full menu), n = 25 alternatives. Observed choices; no generator.</dd>
+    <dt>Reproduce</dt><dd><code>python replication/empirical_dsr_n25/run_bootstrap.py --obs alt0</code> (and <code>--obs full</code>): <code>rum.bootstrap</code> with B = 10,000 multinomial_reject draws, seed 0, abs 5e-4 and two tenfold tighter rounds for the draws still undecided, by the class's automatic method (Flow-CG, float32 pricing). <code>--no-ci</code> skips the one-sided interval.</dd>
+    <dt>Records</dt><dd><code>replication/empirical_dsr_n25/results/bootstrap_dsr_{alt0,full}.json</code>; <code>_B1000</code>: the same at B = 1,000.</dd>
+    <dt>IP-CG, IP-H-CG</dt><dd><code>replication/cgip/cluster_records/Application_DSR/</code>: B = 10,000 on Xeon Gold 6342 nodes with 24 Gurobi threads; draws left undecided at abs 5e-4 were re-solved at 1e-7.</dd>
+  </dl>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Specification</th><th class="num">p</th><th class="num">dist(p̂) in [LB, UB]</th><th class="num">Flow-CG</th><th class="num">IP-CG</th><th class="num">IP-H-CG</th></tr></thead>
+    <tbody>
+      <tr><td>Default only (alt0, M = 301)</td><td class="num">0.1083</td><td class="num">[1.489091, 1.489091]</td><td class="num">688 s</td><td class="num">84,747 s</td><td class="num">28,449 s</td></tr>
+      <tr><td>All alternatives (full, M = 901)</td><td class="num">0.1392</td><td class="num">[2.298668, 2.298669]</td><td class="num">1,499 s</td><td class="num">348,381 s</td><td class="num">204,779 s</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="note">From <code>final_results/Application_DSR/results_dsr.csv</code>, the B = 10,000 rows. All three methods reach the same decision on every draw.</p>
+</article>
+
+<h2 id="ai"><span class="num">8</span>tab:ai and the AI intervals · LLM choice, n = 18</h2>
+<article class="method result">
+  <div class="method-head"><h3>The Hong–Li test on two LLM data sets</h3><span class="tag tag-gpu">BM-ADMM</span><span class="tag tag-cpu">IP-CG · IP-H-CG</span></div>
+  <dl class="kv">
+    <dt>What</dt><dd>The bootstrap test with B = 10,000 draws on 8,807 menus of 18 Apple Watch products, each put to the model 2,000 times (M = 73,492 cells), and the two-sided 95 % intervals for the distance that the text reports: [max(0, LB − c), UB + c], with c the 95 % quantile of ‖p̂<sub>b</sub> − p̂‖.</dd>
+    <dt>Data</dt><dd><code>final_data/Application_AI/raw_data/gpt6luna_noreason.npz</code> and <code>gmicloud.npz</code>: one row per reply kept (replicate, menu, chosen) and the number of unparseable replies dropped. The raw jsonl replies (2.1 GB per data set) are not in the repository.</dd>
+    <dt>Reproduce</dt><dd>The table: <code>python replication/empirical_ai_n18/run_bootstrap.py --model gpt6luna_noreason --no-ci</code> (and <code>--model gmicloud</code>): the replicate as the respondent, B = 10,000 multinomial_reject draws, BM-ADMM with β = 5, abs 5e-4. The intervals: <code>--input replies --no-ci --distance-interval</code>, with each menu's replies resampled on their own.</dd>
+    <dt>Records</dt><dd><code>replication/empirical_ai_n18/results/bootstrap_ai_{gpt6luna_noreason,gmicloud}.json</code> (the table) and <code>..._replies.json</code> (the intervals). The results folder also holds the 100-reply sets and Flow-CG runs.</dd>
+    <dt>IP-CG, IP-H-CG</dt><dd><code>replication/cgip/cluster_records/Application_AI/summary.csv</code>. These cluster runs used the 100-reply sets (<code>gpt5.6-luna.npz</code>, <code>deepseekv4-flash.npz</code>), with 24 Gurobi threads; none finished the certificate of dist(p̂) within 24 h, the table's "≥ 24 h".</dd>
+  </dl>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Paper label</th><th>Data set</th><th class="num">p</th><th class="num">dist(p̂) in [LB, UB]</th><th class="num">BM-ADMM</th><th>95 % interval</th></tr></thead>
+    <tbody>
+      <tr><td>GPT-6 Luna</td><td><code>gpt6luna_noreason</code></td><td class="num">0</td><td class="num">[13.389228, 13.389728]</td><td class="num">110.5 s</td><td>[11.942, 14.837]</td></tr>
+      <tr><td>DeepSeek V4 Flash</td><td><code>gmicloud</code></td><td class="num">0</td><td class="num">[7.220187, 7.220685]</td><td class="num">130.9 s</td><td>[5.453, 8.988]</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="note">From <code>final_results/Application_AI/results_ai.csv</code>: the BM-ADMM panel rows for p, the distance and the time, and the menu-by-menu rows (<code>dci_lower</code>, <code>dci_upper</code>) for the intervals.</p>
+</article>
+
+<h2 id="ip"><span class="num">9</span>IP-CG and IP-H-CG</h2>
+<p>The IP-CG and IP-H-CG numbers in the paper come from runs on a CPU cluster, made with an earlier version of the CGIP code: one run per node, 24 Gurobi threads, a cap of 24 h per run (7 days for binary menus with n = 32 and 35). Their result files are in <code>replication/cgip/cluster_records/&lt;experiment&gt;/</code> as the cluster wrote them: a <code>summary.csv</code> per experiment and the per-run files it refers to. The <code>final_results</code> builders read them for the CGIP and CGIP-heur rows.</p>
+<p><code>replication/cgip/run_cgip.py</code> runs the same experiments with this release's solver, the RUM class with methods <code>ip_cg</code> and <code>ip_cg_heur</code> (Gurobi, CPU):</p>
+<pre><code>python replication/cgip/run_cgip.py race --set Numerical2 --key n25_sparse --method ip_cg --threads 24
+python replication/cgip/run_cgip.py race --set Numerical3 --key n20_m28 --method ip_cg_heur --threads 24
+python replication/cgip/run_cgip.py dsr --obs alt0 --method ip_cg --threads 24
+python replication/cgip/run_cgip.py ai --model gpt6luna_noreason --method ip_cg_heur --threads 24</code></pre>
+<ul>
+  <li><strong>race</strong> takes a cell of <code>final_data/&lt;set&gt;/opt_ref.json</code> and stops once UB &lt; OPT + max(10<sup>−2</sup>·OPT, 10<sup>−3</sup>), the paper's criterion, or at the cluster's cap (<code>--cap-hours</code>).</li>
+  <li><strong>dsr</strong> and <strong>ai</strong> run <code>rum.bootstrap</code> with the class's defaults; they certify p̂ first and stop there if that does not close within <code>--cert-hours</code> (24). <code>--model luna</code> and <code>deepseek</code> select the 100-reply sets of the cluster's AI runs.</li>
+  <li><code>--restarts</code> sets IP-H-CG's random-insertion restarts per pricing call (10, as in the paper). <code>replication/cgip/README.md</code> lists where these runs differ from the cluster's.</li>
+</ul>
+
+<h2 id="protocol"><span class="num">10</span>Protocol and hardware</h2>
+<p>Every time in the paper follows one protocol, enforced by the runners:</p>
+<ul>
+  <li>one fresh process per (cell, solver), so nothing is carried from one run to the next;</li>
+  <li>the GPU idle before a timed run starts: at most 10 % utilisation and 4.5 GB in use, on two consecutive samples (<code>validation/run_paper_table.py</code>, <code>wait_for_idle_gpu</code>);</li>
+  <li>runs strictly sequential, never two at once;</li>
+  <li>no thread caps: every solver gets the whole machine, and the cores it used are recorded per run (<code>avg_cores</code>; the GPU solvers report about 1.0, one CPU thread plus the device).</li>
+</ul>
+<p>Certificate runs are not timed in the paper, so they are not idle-gated.</p>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Machine</th><th>Ran</th><th>Hardware</th></tr></thead>
+  <tbody>
+    <tr><td>GPU desktop</td><td>BM-ADMM, Flow-CG, Flow-ADMM; the bootstrap runs</td><td>AMD Ryzen 9 9950X (16 cores, 32 threads), 64 GB DDR5, NVIDIA GeForce RTX 5090 (32 GB); Windows 11, CUDA 13.3, Python 3.12, CuPy 14</td></tr>
+    <tr><td>CPU cluster</td><td>IP-CG and IP-H-CG</td><td>one node per run, 24 Gurobi threads (the DSR runs: Xeon Gold 6342)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="rerun"><span class="num">11</span>Running it again</h2>
+<pre><code>python replication/density_grid/reproduce.py                   <span class="cm"># tab:density18-20</span>
+python validation/run_lambda_study.py --task 1 2 3 --phase race   <span class="cm"># tab:binary, tab:dense (and the grid at λ = 0.5, 1)</span>
+python validation/make_lambda_tables.py                        <span class="cm"># paper/tables/*.tex from the newest records</span>
+python validation/make_final_results.py                        <span class="cm"># final_results/Numerical1-3/</span>
+python validation/make_final_results_apps.py                   <span class="cm"># final_results/Application_DSR, Application_AI</span>
+python replication/empirical_dsr_n25/run_bootstrap.py --obs alt0     <span class="cm"># tab:dsg; and --obs full</span>
+python replication/empirical_ai_n18/run_bootstrap.py --model gpt6luna_noreason --no-ci     <span class="cm"># tab:ai; and gmicloud</span>
+python replication/empirical_ai_n18/run_bootstrap.py --model gpt6luna_noreason --input replies --no-ci --distance-interval</code></pre>
+<p>The builders alone need no GPU: they rebuild every table from the stored records. The synthetic races take about 150 minutes of solver time in all, two hours of it the n = 35 halfway cell; the IP-CG and IP-H-CG experiments take days on a cluster.</p>
+
+<h2 id="other"><span class="num">12</span>Other folders</h2>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Folder</th><th>What it holds</th></tr></thead>
+  <tbody>
+    <tr><td><code>replication/feasibility_in_n/</code></td><td>the pairwise design from n = 20 to 35, certificates and races; the outside points of tab:binary</td></tr>
+    <tr><td><code>replication/feasibility_in_density/</code></td><td>n = 20 from 1 % to 100 % density, certificates and races; cells of tab:dense</td></tr>
+    <tr><td><code>replication/convex_path/</code></td><td>the path between p̂ and the uniform rule: reference optima and races; the inside and halfway points of tab:binary</td></tr>
+    <tr><td><code>replication/pricing_backends/</code></td><td>Flow-CG's lattice layouts (mask, and two layers in float32, uint24 or uint16) on identical cells</td></tr>
+    <tr><td><code>replication/qp_matrix_memory/</code></td><td>the size of the explicit QP matrices at n = 18–20: why the projection is not handed to a QP solver</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Each folder's <code>README.md</code> says what it reproduces and how; <code>replication/README.md</code> is the index.</p>
+
+<footer>
+  Paper Replication · rum-testing-gpu, replication/. The numbers on this page are read from <code>final_results/</code>.
+</footer>
+</main>
+</div>
+</div>
+</body>
+</html>

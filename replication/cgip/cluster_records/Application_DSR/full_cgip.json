@@ -1,0 +1,43 @@
+{
+  "obs": "full",
+  "method": "cgip",
+  "tag": "",
+  "partition": "week",
+  "last_job": "60955306",
+  "B": 10000,
+  "abs_tol": 0.0005,
+  "seed": 0,
+  "n_redrawn": 72,
+  "dist": {
+    "dist_lb": 2.29821857397188,
+    "dist_ub": 2.2986703962774193,
+    "scale": 3.8357453195197406,
+    "tau_lo": 8.815381138345971,
+    "tau_hi": 8.817114213639698,
+    "iters": 383,
+    "n_columns": 383,
+    "ip_calls": 383,
+    "solve_s": 2837.959039197769
+  },
+  "n_undecided_first_pass": 12,
+  "refine_tol": 1e-07,
+  "dist_refined": {
+    "dist_lb": 2.298668604757898,
+    "dist_ub": 2.298668685387318,
+    "tau_lo": 8.81710734182708,
+    "tau_hi": 8.817107651101,
+    "refine_tol": 1e-07,
+    "solve_s": 3013.2306836028583
+  },
+  "refine_solve_s": 10821.416188878473,
+  "n_below": 8608,
+  "n_above": 1392,
+  "n_undecided": 0,
+  "pval_lo": 0.1392,
+  "pval_hi": 0.1392,
+  "reject_5pct": false,
+  "draws_solve_s": 334721.13471709704,
+  "draws_ip_calls": 137760,
+  "threads": 24,
+  "host": "r816u29n06.grace.ycrc.yale.edu"
+}

@@ -1,0 +1,1050 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RUM Bootstrap Inference</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Same visual system as solver.html: one reading column, a sticky contents rail on wide screens.
+   Roles: blue = above / the solver side, green = below / settled, amber = undecided / needs attention. */
+:root {
+  color-scheme: light;
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --surface-2: #eaeef3;
+  --ink: #16202b;
+  --ink-2: #4a5667;
+  --ink-3: #737f8f;
+  --rule: #d6dce4;
+  --gpu: #1b5aad;
+  --gpu-soft: #e2ebf8;
+  --cpu: #1e7352;
+  --cpu-soft: #def0e7;
+  --old: #96580b;
+  --old-soft: #f8ecd8;
+  --link: #1b5aad;
+  --code-bg: #edf1f5;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0e1318;
+    --surface: #161c23;
+    --surface-2: #1d252e;
+    --ink: #e1e7ee;
+    --ink-2: #a2adba;
+    --ink-3: #7d8998;
+    --rule: #2b3541;
+    --gpu: #7cb0f3;
+    --gpu-soft: #172a42;
+    --cpu: #63c89d;
+    --cpu-soft: #132b20;
+    --old: #e5ab5a;
+    --old-soft: #302410;
+    --link: #7cb0f3;
+    --code-bg: #1c242d;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0e1318;
+  --surface: #161c23;
+  --surface-2: #1d252e;
+  --ink: #e1e7ee;
+  --ink-2: #a2adba;
+  --ink-3: #7d8998;
+  --rule: #2b3541;
+  --gpu: #7cb0f3;
+  --gpu-soft: #172a42;
+  --cpu: #63c89d;
+  --cpu-soft: #132b20;
+  --old: #e5ab5a;
+  --old-soft: #302410;
+  --link: #7cb0f3;
+  --code-bg: #1c242d;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: 16px; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.6 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+a { color: var(--link); text-underline-offset: 2px; }
+a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-radius: 3px; }
+code, pre { font-family: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace; }
+code { font-size: .88em; background: var(--code-bg); padding: .08em .32em; border-radius: 4px; }
+p code, li code, dd code { overflow-wrap: anywhere; }
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 12px 0;
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.55;
+}
+pre code { background: none; padding: 0; font-size: inherit; }
+.cm { color: var(--ink-3); }
+h1, h2, h3, h4 {
+  font-family: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
+  line-height: 1.2;
+  margin: 0;
+  text-wrap: balance;
+}
+h1 { font-size: clamp(2rem, 4.2vw, 2.7rem); font-weight: 600; letter-spacing: -.01em; }
+h2 {
+  font-size: 1.55rem;
+  font-weight: 600;
+  margin: 56px 0 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
+}
+h2 .num { font-family: "IBM Plex Mono", monospace; font-size: .8em; color: var(--ink-3); font-weight: 500; margin-right: .35em; }
+h3 { font-size: 1.18rem; font-weight: 600; margin: 26px 0 6px; }
+h4 {
+  font-size: .76rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--ink-2);
+  margin: 18px 0 6px;
+}
+p, li { max-width: 72ch; }
+p { margin: 10px 0; }
+ul, ol { padding-left: 1.3em; }
+li { margin: 4px 0; }
+
+.wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+header.top { padding-block: 40px 4px; }
+.eyebrow { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--ink-2); letter-spacing: .02em; margin: 0 0 10px; max-width: none; }
+.lede { font-size: 1.1rem; color: var(--ink-2); max-width: 66ch; margin: 14px 0 0; }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; }
+nav.toc { font-size: 14px; }
+nav.toc h4 { margin-top: 0; }
+nav.toc ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 1px; }
+nav.toc li { margin: 0; }
+nav.toc a { display: block; padding: 4px 8px; border-radius: 4px; color: var(--ink-2); text-decoration: none; }
+nav.toc a:hover { background: var(--surface-2); color: var(--ink); }
+@media (min-width: 1100px) {
+  .layout { grid-template-columns: 200px minmax(0, 1fr); gap: 40px; }
+  nav.toc { position: sticky; top: 20px; align-self: start; max-height: calc(100vh - 40px); overflow: auto; padding-top: 6px; }
+}
+@media (max-width: 1099px) {
+  nav.toc { border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding-block: 10px; }
+  nav.toc ol { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+}
+main { min-width: 0; max-width: 880px; padding-bottom: 72px; }
+
+.facts-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  margin: 22px 0 0;
+}
+.facts-row div { padding: 10px 14px 10px 0; min-width: 0; }
+.facts-row dt { font-size: 11.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-2); }
+.facts-row dd { margin: 2px 0 0; font-weight: 500; }
+.status { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; margin: 22px 0 0; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.card h3 { font-size: 1.05rem; margin: 10px 0 4px; }
+.card p { margin: 4px 0 0; font-size: 15px; }
+.pill { display: inline-block; font: 600 11.5px/1 "IBM Plex Mono", monospace; padding: 5px 8px; border-radius: 999px; letter-spacing: .02em; white-space: nowrap; }
+.pill-ok { background: var(--cpu-soft); color: var(--cpu); }
+.pill-plan { background: var(--old-soft); color: var(--old); }
+.pill-gpu { background: var(--gpu-soft); color: var(--gpu); }
+.styles { margin: 34px 0 0; }
+.styles > h2 { margin: 0 0 6px; }
+.styles-sub { color: var(--ink-2); max-width: 80ch; margin: 0 0 12px; font-size: 15px; }
+.styles-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); gap: 12px; }
+.styles .card h3 { margin: 10px 0 2px; }
+.styles .tbl-wrap { margin: 8px 0 10px; }
+table.mini { font-size: 13.5px; }
+table.mini th, table.mini td { padding: 4px 14px 4px 0; }
+table.mini .ign { color: var(--ink-3); }
+.mini-dl { margin: 0; display: grid; gap: 6px; font-size: 14.5px; }
+.mini-dl div { display: grid; grid-template-columns: 76px 1fr; gap: 10px; }
+.mini-dl dt { color: var(--ink-2); font-size: 11.5px; text-transform: uppercase; letter-spacing: .07em; padding-top: 3px; }
+.mini-dl dd { margin: 0; min-width: 0; }
+
+/* the formulas */
+.formula {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 14px 0;
+  overflow-x: auto;
+  font: 14px/1.9 "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  white-space: pre;
+}
+.formula .cm { font-family: "IBM Plex Sans", system-ui, sans-serif; font-size: 13.5px; }
+
+/* figures */
+figure { margin: 22px 0; }
+.fig-frame { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 12px; overflow-x: auto; }
+svg.dia { display: block; width: 100%; min-width: 760px; height: auto; color: var(--ink); }
+figcaption { font-size: 14px; color: var(--ink-2); margin-top: 8px; max-width: 76ch; }
+.dia text { fill: var(--ink); font-family: "IBM Plex Sans", system-ui, sans-serif; font-size: 12.5px; }
+.dia .t-title { font-family: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif; font-weight: 600; font-size: 14.5px; }
+.dia .t-mono { font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace; font-size: 11.5px; }
+.dia .t-sm { font-size: 11.5px; fill: var(--ink-2); }
+.dia .t-tray { font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace; font-size: 11.5px; fill: var(--ink-2); font-weight: 600; }
+.dia .t-below { fill: var(--cpu); font-weight: 600; font-size: 12.5px; }
+.dia .t-above { fill: var(--gpu); font-weight: 600; font-size: 12.5px; }
+.dia .t-undec { fill: var(--old); font-weight: 600; font-size: 12.5px; }
+.dia .box { fill: var(--surface); stroke: var(--rule); stroke-width: 1.2; }
+.dia .box-new { fill: var(--surface); stroke: var(--ink); stroke-width: 1.8; }
+.dia .box-tray { fill: var(--surface-2); stroke: var(--rule); stroke-width: 1; }
+.dia .arrow { stroke: var(--ink-2); stroke-width: 1.4; fill: none; }
+.dia .arrow-dash { stroke: var(--ink-2); stroke-width: 1.3; fill: none; stroke-dasharray: 5 4; }
+.dia .ah { fill: var(--ink-2); }
+.dia .axis { stroke: var(--ink-2); stroke-width: 1.4; fill: none; }
+.dia .band { fill: var(--old-soft); stroke: var(--old); stroke-width: 1.2; stroke-dasharray: 5 3; }
+.dia .br-below { stroke: var(--cpu); stroke-width: 3; fill: none; }
+.dia .br-above { stroke: var(--gpu); stroke-width: 3; fill: none; }
+.dia .br-undec { stroke: var(--old); stroke-width: 3; fill: none; }
+.dia .br-ink { stroke: var(--ink); stroke-width: 2.4; fill: none; }
+.dia .br-settled { stroke: var(--ink-3); stroke-width: 2.2; fill: none; }
+.dia .br-hot { stroke: var(--old); stroke-width: 3.2; fill: none; }
+.dia .cell { fill: var(--surface-2); stroke: var(--ink-3); stroke-width: 1; }
+.dia .cell-none { fill: none; stroke: var(--rule); stroke-width: 1; stroke-dasharray: 3 3; }
+.dia .cell-pick { fill: var(--cpu-soft); stroke: var(--cpu); stroke-width: 2; }
+.dia .row-pick { fill: none; stroke: var(--cpu); stroke-width: 2.2; }
+.dia .t-pick { fill: var(--cpu); font-weight: 600; font-size: 12px; }
+.dia .badge { fill: var(--ink); }
+.dia .t-badge { fill: var(--surface); font-size: 10.5px; font-weight: 600; text-anchor: middle; }
+.fnum { display: inline-grid; place-items: center; min-width: 19px; height: 19px; border-radius: 50%; background: var(--ink); color: var(--surface); font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+table.flows th.fn, table.flows td.fn { width: 26px; padding-right: 8px; }
+table.flows td:nth-child(2) { white-space: nowrap; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--ink-2); margin-top: 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 18px; height: 12px; border-radius: 3px; display: inline-block; }
+.sw-new { background: var(--surface); border: 1.8px solid var(--ink); }
+.sw-old { background: var(--surface); border: 1.2px solid var(--rule); }
+
+/* tables */
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; font-variant-numeric: tabular-nums; }
+th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  border-bottom: 1.5px solid var(--ink-3);
+  padding: 6px 14px 6px 0;
+  white-space: nowrap;
+}
+td { border-bottom: 1px solid var(--rule); padding: 7px 14px 7px 0; vertical-align: top; }
+td.num, th.num { text-align: right; }
+td.nowrap { white-space: nowrap; }
+tr.group td { padding-top: 16px; font-weight: 600; color: var(--ink-2); font-size: 12.5px; text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid var(--rule); }
+.yes { color: var(--cpu); font-weight: 600; }
+.no { color: var(--ink-3); }
+.warn { color: var(--old); font-weight: 600; }
+
+/* decision items */
+.decide { display: grid; gap: 12px; margin: 16px 0; }
+.decide .card h3 { margin: 0 0 6px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.decide .card h3 .k { font: 600 12px/1 "IBM Plex Mono", monospace; color: var(--ink-3); }
+.decide .rec { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--rule); font-size: 15px; }
+.decide .rec b { color: var(--cpu); }
+
+.steps { counter-reset: step; list-style: none; padding: 0; }
+.steps > li { counter-increment: step; position: relative; padding-left: 2.3em; margin: 16px 0; max-width: none; }
+.steps > li::before {
+  content: counter(step);
+  position: absolute; left: 0; top: .05em;
+  font: 600 13px/1.6em "IBM Plex Mono", monospace;
+  width: 1.6em; height: 1.6em; text-align: center;
+  border-radius: 50%; background: var(--surface-2); color: var(--ink);
+}
+.steps > li > p { max-width: 70ch; margin: 4px 0; }
+.steps > li > strong { font-family: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif; font-size: 1.05rem; }
+.note { color: var(--ink-2); font-size: 14.5px; }
+dl.kv { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px 18px; margin: 14px 0 6px; }
+@media (min-width: 700px) { dl.kv { grid-template-columns: 150px minmax(0, 1fr); } }
+dl.kv dt { font-weight: 600; font-size: 13.5px; color: var(--ink-2); padding-top: 1px; }
+dl.kv dd { margin: 0 0 9px; max-width: 70ch; min-width: 0; }
+.phase { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 20px; margin: 14px 0; }
+.phase h3 { margin: 0 0 4px; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: baseline; }
+.phase .gate { margin-top: 8px; font-size: 14.5px; }
+.phase .gate b { color: var(--gpu); }
+footer { border-top: 1px solid var(--rule); margin-top: 48px; padding-top: 14px; font-size: 13.5px; color: var(--ink-2); }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+/* the four pages share one header bar */
+nav.site { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 14px 0 12px; border-bottom: 1px solid var(--rule); font-size: 14px; }
+nav.site .brand { font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace; font-weight: 600; font-size: 13.5px; color: var(--ink); text-decoration: none; margin-right: 14px; }
+nav.site a.pg { color: var(--ink-2); text-decoration: none; padding: 4px 10px; border-radius: 4px; }
+nav.site a.pg:hover { background: var(--surface-2); color: var(--ink); }
+nav.site a.pg[aria-current="page"] { color: var(--ink); background: var(--surface); box-shadow: inset 0 0 0 1px var(--rule); font-weight: 500; }
+nav.site .gh { margin-left: auto; color: var(--ink-2); font-size: 13.5px; text-decoration: none; }
+nav.site .gh:hover { color: var(--link); text-decoration: underline; }
+nav.site + header.top { padding-top: 28px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<nav class="site" aria-label="Pages">
+  <a class="brand" href="index.html">rum-testing-gpu</a>
+  <a class="pg" href="index.html">Overview</a>
+  <a class="pg" href="solver.html">Solvers</a>
+  <a class="pg" href="bootstrap.html" aria-current="page">Bootstrap</a>
+  <a class="pg" href="replication.html">Replication</a>
+  <a class="gh" href="https://github.com/mingxiz/rum-testing-gpu">Source on GitHub</a>
+</nav>
+<header class="top">
+  <p class="eyebrow">rum-testing-gpu · solver/inference</p>
+  <h1>RUM Bootstrap Inference</h1>
+  <p class="lede">Can the observed choice probabilities have come from a random utility model? The bootstrap answers with a p-value for H<sub>0</sub>: dist = 0, using Hong and Li's numerical delta method, and with two confidence intervals for the distance: their one-sided interval and the two-sided interval of the paper's application section. Every number is certified: it comes from the brackets lb ≤ dist ≤ ub that the RUM solver proves. This page shows the two input styles, the pieces and how they call the solver, the defaults, the design choices, and how each part was checked (<a href="#checks">§10</a>); the results are in <a href="#apps">§8</a>.</p>
+  <dl class="facts-row">
+    <div><dt>Entry point</dt><dd><code>rum.bootstrap(panel=…)</code></dd></div>
+    <div><dt>You must pass</dt><dd>the choices, in <a href="#styles-h">DSR or AI style</a>; n is counted from them</dd></div>
+    <div><dt>Defaults</dt><dd>B = 10,000 · multinomial_reject · seed 0</dd></div>
+    <div><dt>Scaling</dt><dd>r<sub>n</sub> = √n, ε<sub>n</sub> = n<sup>−1/3</sup></dd></div>
+  </dl>
+  <div class="status">
+    <div class="card">
+      <span class="pill pill-ok">Inference</span>
+      <h3>p-value and confidence intervals</h3>
+      <p>One <code>Bootstrap</code> object holds the draws and every draw's bracket, so <code>p_value()</code>, <code>confidence_interval()</code> and <code>distance_interval()</code> share all the work. <a href="#interfaces">§4</a></p>
+    </div>
+    <div class="card">
+      <span class="pill pill-ok">Solver</span>
+      <h3>One solver for both jobs</h3>
+      <p>The bootstrap calls the RUM class through a <code>Session</code>: plan once, then solve many points with the same method and storage format. <code>calculate_distance</code> is the same call with or without it. <a href="#contract">§5</a></p>
+    </div>
+    <div class="card">
+      <span class="pill pill-gpu">Results</span>
+      <h3>The paper's p-values</h3>
+      <p>0.1083 and 0.1392 on the DSR data and 0 on all four AI data sets, with every DSR draw decided from certified brackets. <a href="#apps">§8</a></p>
+    </div>
+  </div>
+  <section class="styles" aria-labelledby="styles-h">
+    <h2 id="styles-h">Input styles we support</h2>
+    <p class="styles-sub">The bootstrap needs the choices behind p̂, one row per choice, in one of two styles. The style says how the data were collected, and so what one draw resamples. In both, <code>menu</code> is a bitmask (bit a set = alternative a offered) and <code>chosen</code> is a member of its menu; build rum from the same table with <code>cells_from_panel(table, num_alternatives)</code>.</p>
+    <div class="styles-grid">
+      <div class="card">
+        <span class="pill pill-gpu">panel=</span>
+        <h3>DSR style: people who each answered several menus</h3>
+        <div class="tbl-wrap">
+        <table class="mini">
+          <thead><tr><th>respondent</th><th>menu</th><th>chosen</th></tr></thead>
+          <tbody>
+            <tr><td>0</td><td>2081 = {0, 5, 11}</td><td>5</td></tr>
+            <tr><td>0</td><td>1572865 = {0, 19, 20}</td><td>20</td></tr>
+            <tr><td>0</td><td>4195329 = {0, 10, 22}</td><td>0</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <dl class="mini-dl">
+          <div><dt>Call</dt><dd><code>rum.bootstrap(panel=panel)</code></dd></div>
+          <div><dt>n</dt><dd>the number of unique respondents, unless given (DSR: 520)</dd></div>
+          <div><dt>One draw</dt><dd>resamples respondents, each with all their rows, so a person's answers move together</dd></div>
+          <div><dt>The data</dt><dd>the DSR file is already in this form: 5,200 rows, 520 respondents × 10 of the 301 menus</dd></div>
+        </dl>
+      </div>
+      <div class="card">
+        <span class="pill pill-ok">replies=</span>
+        <h3>AI style: every reply a separate call</h3>
+        <div class="tbl-wrap">
+        <table class="mini">
+          <thead><tr><th>menu</th><th>chosen</th><th class="ign">replicate: which ask (ignored)</th></tr></thead>
+          <tbody>
+            <tr><td>576 = {6, 9}</td><td>9</td><td class="ign">7</td></tr>
+            <tr><td>9472 = {8, 10, 13}</td><td>10</td><td class="ign">15</td></tr>
+            <tr><td>38040 = {3, 4, 7, 10, 12, 15}</td><td>10</td><td class="ign">4</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <dl class="mini-dl">
+          <div><dt>Call</dt><dd><code>rum.bootstrap(replies=replies)</code></dd></div>
+          <div><dt>Rows</dt><dd>one per ask: each menu was asked 100 times (gpt-5.6-luna, deepseek-v4-flash) or 2,000 (gpt-6 luna, GMI Cloud); the replicate is the ask's number, 0 to 99 or 0 to 1,999, not a count</dd></div>
+          <div><dt>n</dt><dd>the replies per menu, unless given: the most on any menu (AI: 100 or 2,000)</dd></div>
+          <div><dt>One draw</dt><dd>resamples each menu's replies on its own; menus do not move together</dd></div>
+          <div><dt>The data</dt><dd>one row per API call, stored in <code>final_data/</code> as <code>.npz</code> tables that <code>replies.py</code> reads (it also reads raw jsonl replies): 8,807 menus × 100 or 2,000 calls</dd></div>
+        </dl>
+      </div>
+    </div>
+    <p class="note">Never pass DSR-style data as replies: a person's answers are linked. The AI table can also be passed as a panel, with the replicate number as the respondent: the paper's AI p-values do that, its AI intervals use the replies, and on the AI data both styles give p = 0. Why DSR needs the respondent and AI does not: <a href="#why-units">§4</a>; results in <a href="#apps">§8</a>.</p>
+  </section>
+</header>
+
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+  <h4>Contents</h4>
+  <ol>
+    <li><a href="#styles-h">Input styles</a></li>
+    <li><a href="#test">1 · The test in one picture</a></li>
+    <li><a href="#components">2 · Components</a></li>
+    <li><a href="#run">3 · One run, step by step</a></li>
+    <li><a href="#interfaces">4 · Interfaces together</a></li>
+    <li><a href="#contract">5 · The solver contract</a></li>
+    <li><a href="#fast">6 · Making it fast</a></li>
+    <li><a href="#params">7 · Parameters and defaults</a></li>
+    <li><a href="#apps">8 · The two applications</a></li>
+    <li><a href="#choices">9 · Design choices</a></li>
+    <li><a href="#checks">10 · How it was checked</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<!-- ================================================================== 1 -->
+<h2 id="test"><span class="num">1</span>The test in one picture</h2>
+<p>Here dist(p) is the distance from p to the RUM polytope on the observed rows, the quantity <code>calculate_distance</code> brackets. The bootstrap needs it at the observed p̂ and at B perturbed points P<sub>b</sub>. The formulas are Hong and Li's numerical delta method, as in the reference implementation the bootstrap was checked against:</p>
+<div class="formula">r_n = √n          ε_n = n^(−1/3)          s = 1 + ε_n·r_n        <span class="cm">DSR n = 520: s = 3.836 · AI n = 100: s = 3.154</span>
+P_b = p̂ + ε_n·r_n·(p̂_b − p̂)              <span class="cm">p̂_b: the b-th bootstrap draw of p̂, b = 1 … B</span>
+T   = r_n · dist(p̂)
+p   = #{ b : dist(P_b) ≥ τ } / B,      τ = s · dist(p̂)              <span class="cm">reject H₀ at α when p ≤ α</span>
+CI  = [ dist(p̂) − q_(1−α) / r_n , ∞ )                             <span class="cm">q_(1−α): the (1−α)-quantile of (dist(P_b) − dist(p̂)) / ε_n</span></div>
+<p>The solver never returns dist exactly. It returns a certified bracket: dist(p̂) ∈ [L<sub>0</sub>, U<sub>0</sub>] and dist(P<sub>b</sub>) ∈ [L<sub>b</sub>, U<sub>b</sub>]. So the threshold τ becomes a band, and each draw falls into one of three cases:</p>
+
+<figure>
+  <div class="fig-frame">
+    <svg class="dia" viewBox="0 0 880 252" role="img" aria-label="On the distance axis, the threshold tau becomes a narrow band s times the bracket of dist(p-hat). A draw whose whole bracket lies left of the band is below and counts 0; a bracket wholly right of it is above and counts 1; a bracket that straddles the band is undecided, counts 1, and is refined.">
+      <defs>
+        <marker id="ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
+      </defs>
+      <rect x="520" y="40" width="38" height="160" class="band"/>
+      <text x="539" y="30" text-anchor="middle" class="t-sm">τ band = s · [L₀, U₀]</text>
+      <line x1="40" y1="200" x2="846" y2="200" class="axis" marker-end="url(#ah1)"/>
+      <text x="846" y="222" text-anchor="end" class="t-sm">distance</text>
+      <line x1="40" y1="194" x2="40" y2="206" class="axis"/>
+      <text x="40" y="222" text-anchor="middle" class="t-sm">0</text>
+      <text x="516" y="222" text-anchor="end" class="t-mono">τ<tspan baseline-shift="sub" font-size="9">lo</tspan></text>
+      <text x="562" y="222" text-anchor="start" class="t-mono">τ<tspan baseline-shift="sub" font-size="9">hi</tspan></text>
+      <!-- dist(p_hat) bracket -->
+      <path d="M170,192 V208 M184,192 V208 M170,200 H184" class="br-ink"/>
+      <text x="177" y="226" text-anchor="middle">dist(p̂)</text>
+      <text x="177" y="242" text-anchor="middle" class="t-sm">bracket [L₀, U₀]</text>
+      <path d="M190,184 C300,168 410,168 512,184" class="arrow-dash" marker-end="url(#ah1)"/>
+      <text x="352" y="164" text-anchor="middle" class="t-sm">× s = 1 + ε_n·r_n</text>
+      <!-- three draws -->
+      <path d="M290,64 V80 M470,64 V80 M290,72 H470" class="br-below"/>
+      <text x="380" y="56" text-anchor="middle" class="t-below">below: U_b &lt; τ_lo → counts 0</text>
+      <path d="M600,104 V120 M780,104 V120 M600,112 H780" class="br-above"/>
+      <text x="690" y="96" text-anchor="middle" class="t-above">above: L_b ≥ τ_hi → counts 1</text>
+      <path d="M486,136 V152 M604,136 V152 M486,144 H604" class="br-undec"/>
+      <text x="614" y="148" text-anchor="start" class="t-undec">undecided → counts 1, then refined</text>
+    </svg>
+  </div>
+  <figcaption>Each horizontal bar is one draw's certified bracket [L<sub>b</sub>, U<sub>b</sub>]. The band's width is s times the gap of the p̂ certificate, drawn wider than life here. Counting an undecided draw as 1 can only raise p, so the reported p-value is an upper bound on the exact Hong–Li p-value and the test keeps size ≤ α. This is the reference's rule.</figcaption>
+</figure>
+
+<div class="formula">p   ∈ [ #above / B ,  (#above + #undecided) / B ]          <span class="cm">reported p = the upper end</span>
+c   = 1 / (ε_n·r_n)                                       <span class="cm">so CI lower end = (1 + c)·dist(p̂) − c·Q_(1−α)(dist(P_b))</span>
+low ∈ [ (1 + c)·L₀ − c·Q(U) ,  (1 + c)·U₀ − c·Q(L) ]        <span class="cm">reported = the left end; Q(·) = np.quantile(·, 1 − α)</span></div>
+<p>Both reported values equal the reference's when the brackets collapse (the exact QPs). The difference from the reference is what happens to undecided draws and to the draws that decide the quantile: here they are re-solved at a tighter tolerance until the bracket is narrow (§3, step 6), instead of being left wide.</p>
+
+<!-- ================================================================== 2 -->
+<h2 id="components"><span class="num">2</span>Components</h2>
+<p>Three modules in <code>solver/inference/</code> and one class, <code>Session</code>, in <code>solver/rum_solver.py</code>. The input is one table of choices, a panel or replies. <code>cells_from_panel</code> counts the menus, alternatives and p̂ in it, the RUM object is built from those, and <code>rum.bootstrap()</code> gets the same table for its draws, after checking that the object's p̂ equals the table's counts (to 1e-9). The math has no solver in it, the draws have no math in them, and only <code>Session</code> touches a solver.</p>
+<pre><code><span class="cm"># solver/inference/draws.py: menus, alternatives and p̂, counted from the panel</span>
+menu, alt, p_hat = cells_from_panel(panel, 25, alternatives=[0])
+<span class="cm"># solver/rum_solver.py: the solver class, as for calculate_distance</span>
+rum = RUM(menu, alt, p_hat, num_alternatives=25)
+<span class="cm"># solver/inference/bootstrap.py: a Bootstrap with its draws; nothing is solved yet</span>
+boot = rum.bootstrap(panel=panel)
+<span class="cm"># the certificate, the screen and the solves; returns a PValue</span>
+p = boot.p_value()</code></pre>
+
+<figure>
+  <div class="fig-frame">
+    <svg class="dia" viewBox="0 0 880 392" role="img" aria-label="Component diagram. You start from one table of choices, a panel or replies, and n: cells_from_panel counts the menus, alternatives and p̂ in it, which build the RUM object, and the same table goes to draws.py for the draws. The Bootstrap orchestrator in solver/inference pulls perturbed points from draws.py, thresholds and decisions from hong_li.py, and sends each point to one Session in rum_solver.py, which plans once and runs the same runners that calculate_distance uses. The Session returns a certified bracket; the Bootstrap turns brackets into the p-value and interval results. The numbered arrows match the table under the figure.">
+      <defs>
+        <marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
+      </defs>
+      <text x="20" y="46" class="t-tray">you pass</text>
+      <rect x="245" y="24" width="270" height="356" rx="8" class="box-tray"/>
+      <text x="257" y="46" class="t-tray">solver/inference/</text>
+      <rect x="615" y="24" width="255" height="356" rx="8" class="box-tray"/>
+      <text x="627" y="46" class="t-tray">solver/rum_solver.py</text>
+
+      <rect x="20" y="60" width="190" height="80" rx="6" class="box"/>
+      <text x="32" y="84" class="t-title">RUM object</text>
+      <text x="32" y="106" class="t-sm">menus, alternatives, p̂</text>
+      <text x="32" y="124" class="t-sm">RUM(…) in rum_solver.py</text>
+
+      <rect x="20" y="180" width="190" height="80" rx="6" class="box"/>
+      <text x="32" y="204" class="t-title">The choices and n</text>
+      <text x="32" y="226" class="t-sm">panel: respondent, menu, chosen</text>
+      <text x="32" y="244" class="t-sm">or replies: menu, chosen</text>
+
+      <rect x="255" y="60" width="250" height="80" rx="6" class="box-new"/>
+      <text x="267" y="84" class="t-title">Bootstrap · bootstrap.py</text>
+      <text x="267" y="106" class="t-sm">certify p̂ → screen → solve → refine</text>
+      <text x="267" y="124" class="t-sm">p_value() · the two intervals</text>
+
+      <rect x="255" y="180" width="115" height="80" rx="6" class="box-new"/>
+      <text x="267" y="204" class="t-title">draws.py</text>
+      <text x="267" y="226" class="t-sm">weights W: B × R</text>
+      <text x="267" y="244" class="t-sm">p̂_b in blocks</text>
+
+      <rect x="390" y="180" width="115" height="80" rx="6" class="box-new"/>
+      <text x="402" y="204" class="t-title">hong_li.py</text>
+      <text x="402" y="226" class="t-sm">s, τ, decide</text>
+      <text x="402" y="244" class="t-sm">p, CI brackets</text>
+
+      <rect x="255" y="296" width="250" height="72" rx="6" class="box-new"/>
+      <text x="267" y="320" class="t-title">PValue · Interval</text>
+      <text x="267" y="340" class="t-sm">+ DistanceInterval; counts, times</text>
+      <text x="267" y="357" class="t-sm">record: save, resume a checkpoint</text>
+
+      <rect x="625" y="60" width="235" height="80" rx="6" class="box-new"/>
+      <text x="637" y="84" class="t-title">Session</text>
+      <text x="637" y="106" class="t-sm">plan once: method, dtype, GPU bytes</text>
+      <text x="637" y="124" class="t-sm">solve(p, tol, below, above, warm)</text>
+
+      <rect x="625" y="180" width="235" height="80" rx="6" class="box"/>
+      <text x="637" y="204" class="t-title">runners → engines</text>
+      <text x="637" y="226" class="t-sm">bm_admm · flow_cg · flow_admm (GPU)</text>
+      <text x="637" y="244" class="t-sm">ip_cg · ip_cg_heur · bm_qp · flow_qp</text>
+
+      <rect x="625" y="296" width="235" height="72" rx="6" class="box"/>
+      <text x="637" y="320" class="t-title">calculate_distance</text>
+      <text x="637" y="340" class="t-sm">one certified solve</text>
+      <text x="637" y="357" class="t-sm">or the race; p must lie in [0, 1]</text>
+
+      <line x1="115" y1="178" x2="115" y2="143" class="arrow" marker-end="url(#ah2)"/>
+      <text x="129" y="165" class="t-mono">cells_from_panel</text><circle cx="115" cy="160" r="8" class="badge"/><text x="115" y="163.7" class="t-badge">1</text>
+      <line x1="210" y1="100" x2="253" y2="100" class="arrow" marker-end="url(#ah2)"/>
+      <text x="231" y="86" text-anchor="middle" class="t-sm">p̂</text><circle cx="231" cy="100" r="8" class="badge"/><text x="231" y="103.7" class="t-badge">2</text>
+      <line x1="210" y1="220" x2="253" y2="220" class="arrow" marker-end="url(#ah2)"/>
+      <text x="231" y="206" text-anchor="middle" class="t-sm">panel</text><circle cx="231" cy="220" r="8" class="badge"/><text x="231" y="223.7" class="t-badge">3</text>
+
+      <line x1="312" y1="180" x2="312" y2="142" class="arrow" marker-end="url(#ah2)"/>
+      <text x="324" y="165" class="t-sm">p̂_b</text><circle cx="312" cy="160" r="8" class="badge"/><text x="312" y="163.7" class="t-badge">8</text>
+      <line x1="447" y1="178" x2="447" y2="142" class="arrow" marker-start="url(#ah2)" marker-end="url(#ah2)"/>
+      <text x="458" y="165" class="t-sm">τ, decide</text><circle cx="447" cy="160" r="8" class="badge"/><text x="447" y="163.7" class="t-badge">4</text>
+      <line x1="380" y1="140" x2="380" y2="294" class="arrow" marker-end="url(#ah2)"/><circle cx="380" cy="277" r="8" class="badge"/><text x="380" y="280.7" class="t-badge">9</text>
+
+      <line x1="505" y1="86" x2="623" y2="86" class="arrow" marker-end="url(#ah2)"/>
+      <text x="564" y="78" text-anchor="middle" class="t-mono">solve(P_b)</text><circle cx="518" cy="86" r="8" class="badge"/><text x="518" y="89.7" class="t-badge">5</text>
+      <line x1="625" y1="116" x2="507" y2="116" class="arrow" marker-end="url(#ah2)"/>
+      <text x="564" y="134" text-anchor="middle" class="t-mono">[L_b, U_b]</text><circle cx="610" cy="116" r="8" class="badge"/><text x="610" y="119.7" class="t-badge">7</text>
+
+      <line x1="742" y1="140" x2="742" y2="178" class="arrow" marker-end="url(#ah2)"/>
+      <text x="755" y="164" class="t-sm">plan, stops, warm</text><circle cx="742" cy="159" r="8" class="badge"/><text x="742" y="162.7" class="t-badge">6</text>
+      <line x1="742" y1="296" x2="742" y2="262" class="arrow-dash" marker-end="url(#ah2)"/>
+      <text x="755" y="284" class="t-sm">same runners</text><circle cx="742" cy="279" r="8" class="badge"/><text x="742" y="282.7" class="t-badge">10</text>
+    </svg>
+  </div>
+  <figcaption>One table goes in: <code>cells_from_panel</code> counts the RUM object's menus, alternatives and p̂ from it, and the bootstrap draws from the same table. The bootstrap's pieces have a heavy outline; the numbers on the arrows match the table below, which names the call and the file behind each. <code>Session</code> and <code>calculate_distance</code> share the class's planner and per-method runners, so there is one implementation of each method. The bootstrap never calls an engine directly.</figcaption>
+  <div class="legend"><span><i class="sw sw-new"></i>the bootstrap</span><span><i class="sw sw-old"></i>the solver and the input</span></div>
+</figure>
+
+<h3 id="flows">The arrows, in the code</h3>
+<p>The call behind each numbered arrow and the file it lives in. The first row, without a number, is the drivers' step before the figure: reading the raw data into the table.</p>
+<div class="tbl-wrap">
+<table class="flows">
+  <thead><tr><th class="fn">#</th><th>Arrow</th><th>The call</th><th>File</th></tr></thead>
+  <tbody>
+    <tr><td class="fn"></td><td>raw data → the choices</td><td>DSR: <code>pd.read_csv</code> of <code>overload_data_25_long.csv</code> (respondent, menu, chosen). AI: <code>load_table</code> of the model's <code>.npz</code>, or of its <code>.jsonl</code> replies through <code>read_replies</code>. This step comes before the figure.</td><td><code>replication/<wbr>empirical_dsr_n25/<wbr>run_bootstrap.py</code>; <code>replication/<wbr>empirical_ai_n18/<wbr>run_bootstrap.py</code> and <code>replication/<wbr>empirical_ai_n18/<wbr>replies.py</code></td></tr>
+    <tr><td class="fn"><span class="fnum">1</span></td><td>the choices → RUM object</td><td><code>cells_from_panel(panel, 25, alternatives=[0])</code> counts (menu, alt, p̂) from the table; <code>RUM(menu, alt, p_hat, num_alternatives=25)</code> builds the object from them.</td><td><code>solver/<wbr>inference/<wbr>draws.py</code>, then <code>solver/<wbr>rum_solver.py</code></td></tr>
+    <tr><td class="fn"><span class="fnum">2</span></td><td>RUM object → Bootstrap</td><td><code>rum.bootstrap(panel=panel)</code> (<code>RUM.bootstrap</code>) returns <code>Bootstrap(rum, …)</code>, which reads menu, alternative and p̂ from the object and takes every setting not given from <code>BOOTSTRAP</code>.</td><td><code>solver/<wbr>rum_solver.py</code> → <code>solver/<wbr>inference/<wbr>bootstrap.py</code>; <code>solver/<wbr>defaults.py</code></td></tr>
+    <tr><td class="fn"><span class="fnum">3</span></td><td>the choices → draws.py</td><td>In <code>Bootstrap.__init__</code>: <code>Draws(panel, menu, alternative, p_hat, B, weights, seed)</code>, or <code>MenuDraws(replies, menu, alternative, p_hat, B, seed)</code>. Each counts p̂ again from the table and raises an error if it differs from the object's by more than 1e-9; <code>default_n</code> gives n when none is passed.</td><td><code>solver/<wbr>inference/<wbr>draws.py</code></td></tr>
+    <tr><td class="fn"><span class="fnum">4</span></td><td>hong_li.py ↔ Bootstrap</td><td><code>scaling(n, r_n, eps_n)</code> gives r<sub>n</sub>, ε<sub>n</sub> and s when the Bootstrap is made. At the end, <code>decide</code>, <code>p_bracket</code> and <code>locked</code> give the p-value, <code>ci_lower</code> and <code>quantile_band</code> the confidence interval, and <code>distance_interval</code> the distance interval.</td><td><code>solver/<wbr>inference/<wbr>hong_li.py</code></td></tr>
+    <tr><td class="fn"><span class="fnum">5</span></td><td>Bootstrap → Session</td><td><code>Bootstrap.session</code> opens <code>rum.session(method, method_args)</code> once: one <code>Session</code>, planned by <code>RUM._plan</code>. <code>_certify</code> calls <code>Session.solve(p_hat, keep=True)</code> for [L<sub>0</sub>, U<sub>0</sub>], so τ = s·[L<sub>0</sub>, U<sub>0</sub>]; <code>_solve</code> calls <code>Session.solve(P_b, below=tau_lo, above=tau_hi, warm=True)</code> for each draw it has to solve.</td><td><code>solver/<wbr>inference/<wbr>bootstrap.py</code> → <code>solver/<wbr>rum_solver.py</code></td></tr>
+    <tr><td class="fn"><span class="fnum">6</span></td><td>Session → runners → engines</td><td><code>_RUN[method](task)</code>: <code>_run_bm_admm</code> → <code>solve_kadmm_v2</code>; <code>_run_flow_cg</code> → <code>solve_cgbfqp</code>; <code>_run_flow_admm</code> → <code>solve_arcflow_fast</code>; <code>_run_cg</code> → <code>solve_cgip</code>, <code>solve_cgipheuristic_rand</code>; <code>_run_exact_qp</code> → <code>solve_arc_flow_qp</code>, <code>solve_BM_qp</code>. The bounds come from <code>transforms.py</code> and <code>certificate.py</code> in <code>solver/common/</code>.</td><td><code>solver/<wbr>rum_solver.py</code> → <code>bm_admm/<wbr>solver.py</code>, <code>flow_cg/<wbr>__init__.py</code>, <code>flow_admm/<wbr>solver.py</code>, <code>ip_cg/<wbr>cgip.py</code>, <code>exact_qp/<wbr>flow_bm_qp.py</code> (under <code>solver/<wbr></code>)</td></tr>
+    <tr><td class="fn"><span class="fnum">7</span></td><td>Session → Bootstrap</td><td>A <code>Result</code> (lb, ub, exit_flag); <code>_solve</code> keeps each draw's tightest [L<sub>b</sub>, U<sub>b</sub>] over its solves.</td><td><code>solver/<wbr>rum_solver.py</code> → <code>solver/<wbr>inference/<wbr>bootstrap.py</code></td></tr>
+    <tr><td class="fn"><span class="fnum">8</span></td><td>draws.py → Bootstrap</td><td><code>Draws.blocks()</code> for the screen (<code>_screen</code>: U<sub>b</sub> = ‖P<sub>b</sub> − p_fit‖, no solve) and <code>Draws.rows(idx)</code> for the draws to solve. Both hand out p̂<sub>b</sub>; <code>hong_li.perturb</code> makes P<sub>b</sub> = p̂ + ε<sub>n</sub>r<sub>n</sub>(p̂<sub>b</sub> − p̂).</td><td><code>solver/<wbr>inference/<wbr>draws.py</code>; <code>solver/<wbr>inference/<wbr>hong_li.py</code></td></tr>
+    <tr><td class="fn"><span class="fnum">9</span></td><td>Bootstrap → results</td><td><code>p_value()</code> returns a <code>PValue</code>, <code>confidence_interval()</code> an <code>Interval</code> and <code>distance_interval()</code> a <code>DistanceInterval</code>. <code>save(path)</code> writes <code>record()</code> as JSON; <code>checkpoint=</code> saves the brackets as the run goes and resumes from them.</td><td><code>solver/<wbr>inference/<wbr>bootstrap.py</code></td></tr>
+    <tr><td class="fn"><span class="fnum">10</span></td><td>calculate_distance → runners</td><td>Not used by the bootstrap. <code>RUM.calculate_distance</code> plans with the same <code>RUM._plan</code> and runs the same <code>_RUN[method]</code>, so each method has one implementation.</td><td><code>solver/<wbr>rum_solver.py</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Module</th><th>Holds</th><th>Depends on</th></tr></thead>
+  <tbody>
+    <tr><td class="nowrap"><code>inference/hong_li.py</code></td><td>r<sub>n</sub>, ε<sub>n</sub>, s; the τ band; the per-draw decision; the p-value and CI brackets; the certified quantile. Pure numpy functions, testable without a solver.</td><td>numpy</td></tr>
+    <tr><td class="nowrap"><code>inference/draws.py</code></td><td>The panel (checked, <a href="#panel">§4</a>) and the draws made from it: <code>Draws</code>, with respondent weights (multinomial_reject, multinomial, exponential, poisson, mammen), or <code>MenuDraws</code>, which resamples replies menu by menu. Hands out the resampled shares p̂<sub>b</sub> in blocks (<code>hong_li.perturb</code> makes P<sub>b</sub> from them); fingerprints the draws; <code>cells_from_panel</code> builds (menu, alternative, p̂) from the panel or the replies.</td><td>numpy, scipy.sparse</td></tr>
+    <tr><td class="nowrap"><code>inference/bootstrap.py</code></td><td><code>Bootstrap</code> (certify p̂, screen, solve, refine, aggregate), the <code>PValue</code>, <code>Interval</code> and <code>DistanceInterval</code> results, the run record, and checkpoints.</td><td>the two above, <code>Session</code></td></tr>
+    <tr><td class="nowrap"><code>rum_solver.py</code></td><td><code>Session</code> and <code>RUM.session()</code>, <code>RUM.bootstrap()</code>. The runners take optional stops, a warm start and a request to keep state; without them they run as in <code>calculate_distance</code>.</td><td>the class's runners</td></tr>
+    <tr><td class="nowrap"><code>defaults.py</code></td><td><code>BOOTSTRAP</code>: B, weights, seed, ε exponent, tolerances, refinement, time caps (§7).</td><td></td></tr>
+    <tr><td class="nowrap"><code>replication/empirical_*/run_bootstrap.py</code></td><td>One per application: load the raw data from <code>final_data/</code>, build the table of choices and the RUM object from it with <code>cells_from_panel</code>, make one call, write the record.</td><td><code>rum.bootstrap</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ================================================================== 3 -->
+<h2 id="run"><span class="num">3</span>One run, step by step</h2>
+<p>What <code>boot.p_value()</code> does the first time it is called. A later <code>confidence_interval()</code> reuses steps 1–5 and every bracket already found.</p>
+<ol class="steps">
+  <li><strong>Plan once.</strong>
+    <p><code>rum.session(method, method_args)</code> resolves the method (automatic choice: AI → bm_admm at 3.1 % density, DSR → flow_cg), its storage format and its GPU budget, exactly as <code>calculate_distance</code> would. Every solve below uses this one plan, so the certificate of p̂ and all B draws share the method and dtype.</p></li>
+  <li><strong>Certify p̂ and keep its state.</strong>
+    <p><code>s.solve(p̂, abs_tol, rel_tol, keep=True)</code> returns [L<sub>0</sub>, U<sub>0</sub>], the fitted point x̂ (a RUM point, so ‖x̂ − p‖ bounds dist(p) from above for every p) and the warm state: flow_cg's columns and weights, bm_admm's ADMM state. The τ band follows. If U<sub>0</sub> ≤ 10<sup>−9</sup>, the data are rationalizable, p = 1 and no draw is solved (the reference's short cut).</p></li>
+  <li><strong>Draw.</strong>
+    <p>The respondent weights W (B × R) are drawn once, from <code>numpy.random.default_rng(seed)</code>. P<sub>b</sub> is built in blocks of at most 128 MB: all 10,000 draws at once for DSR, 228 at a time for AI, whose whole B × M matrix would be 5.9 GB. W is 8 MB for AI and 42 MB for DSR.</p></li>
+  <li><strong>Screen every draw at once.</strong>
+    <p>U<sub>b</sub> = ‖x̂ − P<sub>b</sub>‖ for all b, vectorized. Where U<sub>b</sub> &lt; τ<sub>lo</sub> the draw is certified below with no solve. Measured on DSR: 2,378 of 10,000 draws (alt0) and 1,055 (full). On AI the screen decides every draw (the largest U<sub>b</sub> is 0.555 τ<sub>lo</sub> on gpt-5.6-luna and 0.682 τ<sub>lo</sub> on deepseek-v4-flash).</p></li>
+  <li><strong>Solve the rest, one draw at a time.</strong>
+    <p><code>s.solve(P_b, below=τ_lo, above=τ_hi, warm=True)</code> starts from p̂'s state and stops at the first of: U<sub>b</sub> &lt; τ<sub>lo</sub>, L<sub>b</sub> ≥ τ<sub>hi</sub>, the tolerance (undecided), or <code>draw_time</code>. The engine's stop only ends the solve early. The decision itself is always made from the certified bracket, in <code>hong_li.decide</code>.</p></li>
+  <li><strong>Refine what is still open.</strong>
+    <p>The tolerance drops tenfold, up to <code>refine</code> times. In each round, p̂ is re-certified first when undecided draws sit inside the τ band, which no draw tolerance can resolve. Then only the undecided draws are re-solved. On DSR full, 13 draws are undecided at 5e-4; the rounds re-solve only those, then the few still open, and settle all of them.</p></li>
+  <li><strong>Aggregate.</strong>
+    <p>The p-value bracket, the decision at α and the counts. For the CI, the certified quantile of §6. The run record carries the settings, the plan line, the fingerprints of data and draws, every draw's bracket and decision, and the times of each step.</p></li>
+</ol>
+
+<!-- ================================================================== 4 -->
+<h2 id="interfaces"><span class="num">4</span>Interfaces together</h2>
+<p>The solver interface for one distance is the same with or without the bootstrap, which adds a solver session and the inference object on top of it.</p>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Call</th><th>Returns</th><th>What it is for</th></tr></thead>
+  <tbody>
+    <tr class="group"><td colspan="3">RUM solver</td></tr>
+    <tr><td><code>RUM(menu, alternative, choice_probability, num_alternatives=None)</code><br><code>RUM.from_rows(rows, num_alternatives)</code></td><td>RUM</td><td>Checks the data once: one row per observed (menu, alternative), p̂ in [0, 1].</td></tr>
+    <tr><td><code>rum.calculate_distance(abs_tol, rel_tol, method, method_args, max_time, p, vcov, seed, verbose, machine, opt, opt_rel_tol, opt_floor)</code></td><td><code>Result</code></td><td>One certified distance, or with <code>opt</code> the paper's race. Plans, solves, frees the GPU.</td></tr>
+    <tr><td><code>Result</code></td><td></td><td>exit_flag, status, message, distance, lb, ub, abs_gap, rel_gap, method, method_args (with the resolved dtype), iterations, time, time_setup, time_solve, p_fit, trace, machine, info.</td></tr>
+    <tr class="group"><td colspan="3">Session · in rum_solver.py</td></tr>
+    <tr><td><code>rum.session(method=None, method_args=None, vcov=None, machine=None)</code></td><td><code>Session</code></td><td>Plans once (method, dtype, layout, GPU bytes); builds Gurobi models once.</td></tr>
+    <tr><td><code>s.solve(p, abs_tol, rel_tol, max_time, below=None, above=None, warm=False, keep=False)</code></td><td><code>Result</code></td><td>One bracket at any finite p (a perturbed point may leave [0, 1]). Stops early at ub &lt; below or lb ≥ above. <code>keep</code> stores this solve's state and fitted point; <code>warm</code> starts from it. A threshold stop reports exit_flag 5.</td></tr>
+    <tr><td><code>s.fit</code> · <code>s.method</code> · <code>s.method_args</code> · <code>s.close()</code></td><td></td><td>The kept fitted point (input row order), the plan, and freeing the GPU (also a context manager).</td></tr>
+    <tr class="group"><td colspan="3">Bootstrap · solver/inference</td></tr>
+    <tr><td><code>rum.bootstrap(n=None, panel=None, replies=None, B=10_000, weights="multinomial_reject", seed=0, r_n=None, eps_n=None, method=None, method_args=None, abs_tol=5e-4, rel_tol=0, refine=2, max_time=3600, draw_time=120, vcov=None, machine=None, checkpoint=None, verbose=False)</code></td><td><code>Bootstrap</code></td><td>Takes one of the two inputs (<a href="#panel">below</a>; <code>weights</code> applies to a panel only), checks it against rum and n, then holds the draws, the session and every draw's bracket. Solves nothing until asked.</td></tr>
+    <tr><td><code>boot.p_value(alpha=0.05, stop_when_decided=False)</code></td><td><code>PValue</code></td><td>p (the conservative upper end), p_lo, p_hi, reject, alpha, n_below, n_above, n_undecided, n_screened, tau_lo, tau_hi, dist_hat = (L₀, U₀), T, times.</td></tr>
+    <tr><td><code>boot.confidence_interval(alpha=0.05)</code></td><td><code>Interval</code></td><td>lower (conservative), lower_bracket, upper = ∞, alpha, q bracket, c, n_solved, times.</td></tr>
+    <tr><td><code>boot.distance_interval(alpha=0.05)</code></td><td><code>DistanceInterval</code></td><td>The two-sided interval of the paper's application section: lower = max(0, L₀ − c), upper = U₀ + c, half_width = c (the (1 − α)-quantile of ‖p̂<sub>b</sub> − p̂‖), alpha, dist_hat, reject (lower &gt; 0), time. No draw solved.</td></tr>
+    <tr><td><code>print(boot)</code> · <code>boot.save(path)</code> · <code>boot.close()</code></td><td></td><td>Summary of both results with the plan line; the JSON record with every draw's bracket.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3 id="panel">The two inputs</h3>
+<p>The bootstrap redraws the data, so it needs the choices before counting, one row per choice. They come as one of two tables, picked by how the data were collected. The distance always uses the p̂ inside <code>rum</code>; the table says how p̂ was counted, and from whom.</p>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Input</th><th>Columns</th><th>The data</th><th>One draw resamples</th><th>n</th><th>Used for</th></tr></thead>
+  <tbody>
+    <tr><td><code>panel=</code> · DSR style</td><td>respondent, menu, chosen</td><td>people who each answered several menus</td><td>respondents, each with all their rows</td><td>the number of respondents (the default)</td><td>DSR: 520 people, 10 of 301 menus each. The paper's AI p-values, with the replicate as the respondent.</td></tr>
+    <tr><td><code>replies=</code> · AI style</td><td>menu, chosen</td><td>replies collected one by one, such as an LLM asked each menu many times</td><td>each menu's replies, on their own</td><td>the replies per menu; by default the most on any menu</td><td>AI: 8,807 menus, 100 or 2,000 separate calls each (<code>--input replies</code>); the paper's AI intervals.</td></tr>
+  </tbody>
+</table>
+</div>
+<figure>
+  <div class="fig-frame">
+    <svg class="dia" viewBox="0 0 880 300" role="img" aria-label="Two grids of four units by three menus show what one bootstrap draw picks. Left, a panel: each respondent answered some of the menus, and the draw gives each respondent one weight, here 1, 1, 0 and 2, so a respondent's answers on every menu move together. Right, replies: every menu's replies are resampled on their own, so the picks on one menu say nothing about the picks on another, and the replicate number links nothing.">
+      <text x="20" y="26" class="t-title">panel= · DSR style</text>
+      <text x="20" y="44" class="t-sm">one weight per respondent, on every menu they answered</text>
+      <text x="93" y="74" text-anchor="middle" class="t-sm">menu A</text>
+      <text x="149" y="74" text-anchor="middle" class="t-sm">menu B</text>
+      <text x="205" y="74" text-anchor="middle" class="t-sm">menu C</text>
+      <text x="56" y="104" text-anchor="end" class="t-mono">r1</text>
+      <rect x="70" y="84" width="46" height="30" rx="3" class="cell"/>
+      <rect x="126" y="84" width="46" height="30" rx="3" class="cell"/>
+      <rect x="182" y="84" width="46" height="30" rx="3" class="cell-none"/>
+      <rect x="64" y="80" width="170" height="38" rx="5" class="row-pick"/>
+      <text x="246" y="104" class="t-pick">w = 1</text>
+      <text x="56" y="144" text-anchor="end" class="t-mono">r2</text>
+      <rect x="70" y="124" width="46" height="30" rx="3" class="cell-none"/>
+      <rect x="126" y="124" width="46" height="30" rx="3" class="cell"/>
+      <rect x="182" y="124" width="46" height="30" rx="3" class="cell"/>
+      <rect x="64" y="120" width="170" height="38" rx="5" class="row-pick"/>
+      <text x="246" y="144" class="t-pick">w = 1</text>
+      <g opacity="0.4">
+        <text x="56" y="184" text-anchor="end" class="t-mono">r3</text>
+        <rect x="70" y="164" width="46" height="30" rx="3" class="cell"/>
+        <rect x="126" y="164" width="46" height="30" rx="3" class="cell-none"/>
+        <rect x="182" y="164" width="46" height="30" rx="3" class="cell"/>
+        <text x="246" y="184" class="t-sm">w = 0</text>
+      </g>
+      <text x="56" y="224" text-anchor="end" class="t-mono">r4</text>
+      <rect x="70" y="204" width="46" height="30" rx="3" class="cell"/>
+      <rect x="126" y="204" width="46" height="30" rx="3" class="cell"/>
+      <rect x="182" y="204" width="46" height="30" rx="3" class="cell-none"/>
+      <rect x="64" y="200" width="170" height="38" rx="5" class="row-pick"/>
+      <text x="246" y="224" class="t-pick">w = 2</text>
+      <text x="20" y="266" class="t-sm">r4 counts twice on A and B; r3 drops out of A and C</text>
+      <text x="20" y="284" class="t-sm">dashed: a menu the respondent was not shown</text>
+
+      <line x1="430" y1="20" x2="430" y2="286" class="arrow-dash"/>
+
+      <text x="470" y="26" class="t-title">replies= · AI style</text>
+      <text x="470" y="44" class="t-sm">each menu's replies resampled on their own</text>
+      <text x="543" y="74" text-anchor="middle" class="t-sm">menu A</text>
+      <text x="599" y="74" text-anchor="middle" class="t-sm">menu B</text>
+      <text x="655" y="74" text-anchor="middle" class="t-sm">menu C</text>
+      <text x="506" y="104" text-anchor="end" class="t-mono">r1</text>
+      <text x="506" y="144" text-anchor="end" class="t-mono">r2</text>
+      <text x="506" y="184" text-anchor="end" class="t-mono">r3</text>
+      <text x="506" y="224" text-anchor="end" class="t-mono">r4</text>
+      <rect x="520" y="84" width="46" height="30" rx="3" class="cell-pick"/><text x="543" y="104" text-anchor="middle" class="t-pick">×2</text>
+      <rect x="520" y="124" width="46" height="30" rx="3" class="cell" opacity="0.4"/>
+      <rect x="520" y="164" width="46" height="30" rx="3" class="cell-pick"/><text x="543" y="184" text-anchor="middle" class="t-pick">×1</text>
+      <rect x="520" y="204" width="46" height="30" rx="3" class="cell-pick"/><text x="543" y="224" text-anchor="middle" class="t-pick">×1</text>
+      <rect x="576" y="84" width="46" height="30" rx="3" class="cell" opacity="0.4"/>
+      <rect x="576" y="124" width="46" height="30" rx="3" class="cell-pick"/><text x="599" y="144" text-anchor="middle" class="t-pick">×1</text>
+      <rect x="576" y="164" width="46" height="30" rx="3" class="cell-pick"/><text x="599" y="184" text-anchor="middle" class="t-pick">×2</text>
+      <rect x="576" y="204" width="46" height="30" rx="3" class="cell-pick"/><text x="599" y="224" text-anchor="middle" class="t-pick">×1</text>
+      <rect x="632" y="84" width="46" height="30" rx="3" class="cell-pick"/><text x="655" y="104" text-anchor="middle" class="t-pick">×1</text>
+      <rect x="632" y="124" width="46" height="30" rx="3" class="cell-pick"/><text x="655" y="144" text-anchor="middle" class="t-pick">×2</text>
+      <rect x="632" y="164" width="46" height="30" rx="3" class="cell" opacity="0.4"/>
+      <rect x="632" y="204" width="46" height="30" rx="3" class="cell-pick"/><text x="655" y="224" text-anchor="middle" class="t-pick">×1</text>
+      <text x="694" y="144" class="t-sm">each column: 4 picks</text>
+      <text x="694" y="162" class="t-sm">from its own 4 replies</text>
+      <text x="470" y="266" class="t-sm">menu A's picks say nothing about menu B's</text>
+      <text x="470" y="284" class="t-sm">the replicate number links nothing across menus</text>
+    </svg>
+  </div>
+  <figcaption>What one draw picks, on four units and three menus. With a panel the draw weights people, so every menu a person answered moves with that person; DSR needs this, because a respondent's ten answers are linked. With replies each menu is resampled on its own, which is how the AI data were made: every reply was a separate call. The paper's AI p-values pass the AI data as a panel, with the replicate number as the respondent (the left picture with every cell filled), which is valid but links the menus within a draw; its AI intervals use replies.</figcaption>
+</figure>
+<h4 id="why-units">Why DSR needs the respondent and AI does not</h4>
+<p>A draw must resample whatever was sampled independently. The two data sets differ in what that is.</p>
+<ul>
+  <li><b>AI: one call.</b> Each menu was asked a fixed number of times by design: 100 (gpt-5.6-luna, deepseek-v4-flash) or 2,000 (gpt-6 luna, GMI Cloud). Every ask is a fresh API call with no memory of the others, and the display order is reshuffled each time, so a menu's replies are independent draws from one choice distribution, independent across menus. Nothing links one reply to another, so each menu's replies are resampled on their own.</li>
+  <li><b>What the AI table needs.</b> <code>menu</code> and <code>chosen</code>, one row per reply. A menu's number of replies N<sub>D</sub> is its number of rows, and the draws use only how often each alternative was chosen on each menu: on {6, 9}, gpt-6 luna chose watch 9 in 1,953 of the 2,000 asks. The replicate column is the ask's number, not a count, and is ignored. What makes this valid is the independence, not the fixed count: a menu that lost unparseable replies uses the ones it kept (GMI Cloud: 1,995 to 2,000 per menu).</li>
+  <li><b>DSR: one person.</b> 520 respondents each answered 10 menus, the full 25-alternative menu and 9 of the other 300: 5,200 rows, and 6 to 520 answers per menu (median 15). The randomness is which people were sampled, and a person's ten answers come from the same tastes, so they are linked. A draw picks 520 people with replacement, each with all ten answers, which keeps the link. Treating the 5,200 answers as independent would understate how much p̂ varies, narrow the bootstrap distribution and over-reject.</li>
+  <li><b>What the DSR table needs.</b> <code>respondent</code>, <code>menu</code> and <code>chosen</code>, one row per answer; how many answers a person gave follows from the rows. Because a draw picks people, a menu's number of answers changes from draw to draw and can reach 0; <code>multinomial_reject</code> redraws such a resample (72 times at B = 10,000).</li>
+</ul>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th></th><th>DSR · <code>panel=</code></th><th>AI · <code>replies=</code></th></tr></thead>
+  <tbody>
+    <tr><td>Independent unit</td><td>a person, with all 10 answers</td><td>one call, one reply</td></tr>
+    <tr><td>Answers per menu</td><td>set by who was shown which menu: 6 to 520</td><td>fixed by design: 100 or 2,000 asks on every menu</td></tr>
+    <tr><td>Columns needed</td><td>respondent, menu, chosen</td><td>menu, chosen</td></tr>
+    <tr><td>One draw</td><td>520 people with replacement, with all their answers</td><td>each menu's replies with replacement, menu by menu</td></tr>
+    <tr><td>Answers per menu in a draw</td><td>random; can be 0, then the resample is redrawn</td><td>always N<sub>D</sub></td></tr>
+    <tr><td>n in r<sub>n</sub> and &epsilon;<sub>n</sub></td><td>the respondents: 520</td><td>the replies per menu: 100 or 2,000</td></tr>
+  </tbody>
+</table>
+</div>
+<h4>The panel</h4>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Column</th><th>Holds</th><th>DSR</th><th>AI</th></tr></thead>
+  <tbody>
+    <tr><td><code>respondent</code></td><td>Who chose: an integer or string id. Rows with the same id are one unit and are resampled together. n must equal the number of distinct ids.</td><td>0 … 519</td><td>the replicate, 0 … 99 or 0 … 1,999 (as a panel)</td></tr>
+    <tr><td><code>menu</code></td><td>The menu offered, as an integer bitmask: bit a set means alternative a was offered. The encoding of <code>RUM(menu, …)</code>.</td><td>2081 = {0, 5, 11}</td><td>the set shown, whatever the display order</td></tr>
+    <tr><td><code>chosen</code></td><td>The alternative picked, an integer from 0, and a member of its menu.</td><td>5</td><td>the product at the reply's position</td></tr>
+  </tbody>
+</table>
+</div>
+<ul>
+  <li><b>Form.</b> A pandas DataFrame, or a dict of equal-length columns. Other columns are ignored, and row order does not matter.</li>
+  <li><b>Values.</b> No missing values. <code>menu</code> and <code>chosen</code> are integers, every chosen alternative is in its menu, and every alternative is below <code>rum.n</code>. A respondent may answer a menu more than once; each row counts.</li>
+  <li><b>Agreement with rum.</b> Each rum row (D, a) must be counted from the table: p̂ = (rows with menu D and chosen a) ÷ (rows with menu D), to within 1e-9. <code>cells_from_panel(table, num_alternatives, alternatives=None)</code> builds rum's rows exactly this way, from either table. Every rum menu must occur in the panel. Panel rows on a menu that has no rum row are not used, and their count is reported.</li>
+  <li><b>n.</b> The number of distinct respondents: 520 for DSR, 100 or 2,000 for AI as a panel. It is counted from the panel unless given; a given n that differs raises an error.</li>
+</ul>
+<pre><code><span class="cm"># a toy panel: 4 respondents, 2 menus (written as sets here; the panel stores bitmasks)</span>
+respondent  menu     chosen
+1           {a, b}   a          p̂(a | {a, b}) = 2/3     <span class="cm"># 3 rows on {a, b}, 2 chose a</span>
+1           {a, c}   a          p̂(a | {a, c}) = 1/2     <span class="cm"># 2 rows on {a, c}, 1 chose a</span>
+2           {a, b}   b
+3           {a, b}   a          <span class="cm"># one draw resamples respondents 2, 3, 4, 4 and counts again:</span>
+4           {a, c}   c          p̂_b(a | {a, b}) = 1/2,  p̂_b(a | {a, c}) = 0</code></pre>
+<p>Problems are reported before anything is solved, for example:</p>
+<pre><code>ValueError: n = 500, but the panel has 520 respondents
+ValueError: panel row 17: chosen 7 is not in its menu (mask 2081)
+ValueError: rum row 4 (menu 2081, alternative 0): p_hat = 0.7, but the panel gives 0.727273 (8 of 11 rows); build rum with cells_from_panel(panel, ...)</code></pre>
+<p class="note">The AI replies were collected as jsonl, one line per call. <code>replication/empirical_ai_n18/replies.py</code> turns them into a table: respondent = replicate, menu = the set shown, chosen = the product at the reply's position, unparseable replies dropped (none for gpt-5.6-luna, 165 for deepseek-v4-flash). <code>final_data/Application_AI/raw_data/</code> holds these tables as <code>.npz</code>. The same table serves as the panel, or, its respondent column ignored, as the replies.</p>
+
+<h4 id="replies">The replies</h4>
+<ul>
+  <li><b>Form.</b> Two columns, <code>menu</code> and <code>chosen</code>, one row per reply, with the same rules as the panel's; any other column, such as a replicate number, is ignored.</li>
+  <li><b>The draws.</b> Each draw redraws every menu's N<sub>D</sub> replies with replacement, on its own: menu D's counts are Multinomial(N<sub>D</sub>, D's shares), independent across menus. Block k of the draws comes from <code>default_rng([seed, k])</code>, so any block is rebuilt alone. A full pass over the 10,000 AI draws takes 28 s (Luna) and 39 s (DeepSeek) on one core, against about 9 s for the panel.</li>
+  <li><b>The same seed gives the same draws only with the same blocks.</b> A block holds at most 128 MB of draws (<code>BLOCK_BYTES</code> in <code>draws.py</code>): 228 draws for the AI data's 73,492 cells, so draws 0 to 227 come from block 0's random stream, draws 228 to 455 from block 1's, and so on, 44 blocks for B = 10,000. With another <code>BLOCK_BYTES</code>, or a RUM object with another number of cells, the blocks are cut elsewhere and the same seed gives other draws: just as valid, but not the record's, so the interval can move in its last digits. The record keeps a fingerprint of all B draws (16 hex digits of their sha256), which shows whether a re-run used the same draws, and a checkpoint will not resume with different ones. The panel draws do not depend on the block size: the respondent weights are drawn all at once, and the blocks only cut them up.</li>
+  <li><b>n.</b> The number of replies per menu: 100 or 2,000 for AI. Unless given it is the most replies on any menu (deepseek-v4-flash: 100, though a few menus kept 94 to 99 after dropped replies; GMI Cloud: 2,000, with 1,995 to 2,000 kept); a given n must lie between the fewest and the most. <code>weights</code> does not apply.</li>
+  <li><b>When not to use it.</b> Never for DSR-style data: a person's answers are linked, and resampling each menu on its own would ignore that.</li>
+</ul>
+<pre><code>ValueError: n = 59, but the menus have 60 to 60 replies; with replies, n is the number of replies per menu
+ValueError: give the choices behind p_hat once: panel= (respondent, menu, chosen; respondents are resampled) or replies= (menu, chosen; each menu's replies are resampled)
+ValueError: weights = 'exponential' is for panel=; replies= are resampled menu by menu</code></pre>
+
+<h3>The calls, end to end</h3>
+<pre><code><span class="cm"># DSR alt0: 520 respondents each answered 10 of the 301 menus</span>
+import pandas as pd
+from solver.rum_solver import RUM
+from solver.inference import cells_from_panel
+
+<span class="cm"># the panel: one row per choice, columns respondent, menu, chosen (5,200 rows)</span>
+panel = pd.read_csv("final_data/Application_DSR/raw_data/overload_data_25_long.csv")
+menu, alt, p_hat = cells_from_panel(panel, 25, alternatives=[0])   <span class="cm"># alt0: one cell per menu, M = 301</span>
+rum = RUM(menu, alt, p_hat, num_alternatives=25)
+
+boot = rum.bootstrap(panel=panel)           <span class="cm"># n = 520 from the panel; B = 10,000, multinomial_reject, seed 0, r_n = √520</span>
+pv = boot.p_value()                         <span class="cm"># p = 0.1083 (8,917 below / 1,083 above)</span>
+ci = boot.confidence_interval()             <span class="cm"># one-sided, 95 %</span>
+di = boot.distance_interval()               <span class="cm"># two-sided, 95 %: [max(0, L₀ − c), U₀ + c], no draw solved</span>
+print(boot)
+
+<span class="cm"># AI (gpt-5.6-luna): 8,807 menus, each put to the model 100 times</span>
+table, dropped = load_table("final_data/Application_AI/raw_data/gpt5.6-luna.npz")   <span class="cm"># replication/empirical_ai_n18/replies.py: respondent = replicate, menu, chosen</span>
+menu, alt, p_hat = cells_from_panel(table, 18)          <span class="cm"># every member alternative, M = 73,492</span>
+rum = RUM(menu, alt, p_hat, 18)
+pv = rum.bootstrap(panel=table).p_value()               <span class="cm"># the replicate as the respondent, n = 100; p = 0</span>
+pv = rum.bootstrap(replies=table).p_value()             <span class="cm"># each menu on its own (respondent ignored), n = 100; p = 0</span>
+
+<span class="cm"># the session on its own: plan once, solve many</span>
+with rum.session() as s:                    <span class="cm"># e.g. flow_cg, float32 pricing, float64 bounds</span>
+    r0 = s.solve(rum.choice_probability, abs_tol=5e-4, keep=True)
+    rb = s.solve(P_b, abs_tol=5e-4, below=tau_lo, above=tau_hi, warm=True)</code></pre>
+
+<!-- ================================================================== 5 -->
+<h2 id="contract"><span class="num">5</span>The solver contract</h2>
+<p>The bootstrap asks one thing of the solver: <em>bracket dist at this point, and stop as soon as the bracket clears a threshold</em>. <code>Session.solve</code> answers through the same planner and runners as <code>calculate_distance</code>. Each runner gets three optional extras: threshold stops, a warm start, and a request to keep state. When none are given, the runner runs exactly as in <code>calculate_distance</code>.</p>
+
+<h3>Per method</h3>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Method</th><th>Threshold stop</th><th>Warm start from p̂</th><th>Built once per session</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><code>bm_admm</code></td><td class="yes">engine ub_target / lb_target, fed by the class's float64 push and GPU bound</td><td class="yes">the ADMM state (host copy above n = 22)</td><td>CuPy pool kept between draws</td><td>a lower bound is only worth computing when ub ≥ τ<sub>hi</sub></td></tr>
+    <tr><td><code>flow_cg</code></td><td class="yes">engine ub_stop / lb_stop with a 2δ margin, then confirmed with the float64 ub and lb</td><td class="yes">columns and weights, early UB check</td><td>pricing setup rebuilt per call (≤ 0.24 s at n = 35)</td><td>a "below" decision needs no lower-bound sweep</td></tr>
+    <tr><td><code>flow_admm</code></td><td class="yes">raised from the class's callbacks</td><td class="no">no (measured useless)</td><td>Mhat cached</td><td>never chosen automatically</td></tr>
+    <tr><td><code>ip_cg</code>, <code>ip_cg_heur</code></td><td class="yes">engine lb_stop / ub_stop</td><td class="no">no (the master could start from p̂'s columns)</td><td>the Gurobi pricing model</td><td>CPU</td></tr>
+    <tr><td><code>bm_qp</code>, <code>flow_qp</code></td><td class="no">none: one exact solve</td><td class="no">no</td><td>the Gurobi model</td><td>CPU, small n</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="note">δ = ‖p − float32(p)‖ is flow_cg's rounding of the target. The class already corrects for it in <code>calculate_distance</code>, and the session reuses that code.</p>
+
+<h3>The parts that must match, and how they do</h3>
+<dl class="kv">
+  <dt>Method and dtype</dt><dd>Planned once per session and recorded in every result. The p̂ certificate and all draws share them. Re-planning per draw could switch formats if GPU memory changed in between; the session never re-plans.</dd>
+  <dt>Bound precision</dt><dd>ub is the float64 distance of a RUM point; lb is float64 wherever a float64 form fits. A decision that rests on a lower bound with <code>lb_rigorous</code> False (flow_cg at n = 34–35 on 32 GB) is counted and named in the result.</dd>
+  <dt>Tolerances</dt><dd>The class's rule: stop when abs_gap ≤ abs_tol or rel_gap ≤ rel_tol. The applications used abs 5e-4 and rel 0, which is the default here.</dd>
+  <dt>The distance</dt><dd>One definition: ‖·‖ on the observed rows, singleton rows as a constant, <code>vcov</code> passed through (Gurobi methods only).</dd>
+  <dt>Row order</dt><dd>Input row order everywhere. The session maps to and from each engine's order, so x̂, the draws and P<sub>b</sub> line up with <code>rum.menu</code>.</dd>
+  <dt>The [0, 1] check</dt><dd><code>calculate_distance</code> keeps rejecting p outside [0, 1], because it takes observed probabilities. <code>Session.solve</code> accepts any finite vector. It has to: on DSR every one of the 10,000 perturbed points has entries outside [0, 1] (measured on alt0 and full).</dd>
+  <dt>Decisions</dt><dd>Made in one place, <code>hong_li.decide(L_b, U_b, τ_lo, τ_hi)</code>, with the reference's strict rules (below iff U<sub>b</sub> &lt; τ<sub>lo</sub>; above iff L<sub>b</sub> ≥ τ<sub>hi</sub>). Engine stop reasons are only used to stop early, never to decide. For example, bm_admm's target test is ≤, not &lt;.</dd>
+  <dt>Seeds and time</dt><dd>The draws' seed is separate from flow_cg's first-column seed. Time is reported per step: certificate, screen, loop, refinement. Setup is counted once.</dd>
+</dl>
+
+<!-- ================================================================== 6 -->
+<h2 id="fast"><span class="num">6</span>Making it fast</h2>
+<p>A run costs one certificate of p̂, a screen of every draw, and the solves of the draws the screen leaves open. How many it leaves open depends on the data. On the AI data the screen decides all 10,000 draws, so the p-value costs one certificate and a pass over the draws (21.5 s to 130.9 s on the four data sets, <a href="#apps">§8</a>). On DSR the draws scatter further from the p̂ fit, and 7,622 (alt0) and 8,945 (full) of them need a solve.</p>
+
+<h3>The levers, in order of effect</h3>
+<ul>
+  <li><b>Restart from p̂.</b> Every draw starts from p̂'s solver state (on the AI data at B = 1,000, BM-ADMM took 300 s from a cold start and 10 s restarted).</li>
+  <li><b>Screen all draws with the p̂ fit.</b> One vectorized pass gives every draw a certified upper bound. This is the restart test run for every draw at once, with no solver call.</li>
+  <li><b>Stop at the decision.</b> A draw stops when its bracket clears the band; below-decisions never pay for a lower bound.</li>
+  <li><b>Refine only what is open.</b> Undecided draws and the p̂ certificate are tightened; settled draws are never re-solved.</li>
+  <li><b>Plan and build once.</b> One plan, one Gurobi model, a CuPy pool kept warm: setup is paid once per session instead of once per draw.</li>
+  <li><b>Stream the draws.</b> W is kept; P<sub>b</sub> is built in blocks of at most 128 MB. Memory stays at W plus one block.</li>
+</ul>
+
+<h3>The confidence interval needs a different kind of work</h3>
+<p>The p-value only needs each draw's side of τ. The CI needs the (1 − α)-quantile of dist(P<sub>b</sub>), and only the draws near that quantile matter. The quantile is monotone in every draw, so Q(L) ≤ Q ≤ Q(U). A draw whose whole bracket lies outside the band [Q(L), Q(U)] cannot move either end. The CI therefore solves draws in descending order of their screen bound until the band has a lower end, then re-solves only the draws that overlap it, until the interval's bracket is about 2 × abs_tol wide.</p>
+<figure>
+  <div class="fig-frame">
+    <svg class="dia" viewBox="0 0 880 262" role="img" aria-label="Schematic of the certified quantile. Draws sorted by upper bound each show a vertical bracket. A horizontal band from Q(L) to Q(U) contains the quantile. Brackets entirely below or entirely above the band are settled; only the few brackets that overlap the band are re-solved at a tighter tolerance.">
+      <defs>
+        <marker id="ah3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
+      </defs>
+      <rect x="40" y="95" width="806" height="20" class="band"/>
+      <text x="842" y="89" text-anchor="end" class="t-mono">Q(U)</text>
+      <text x="842" y="129" text-anchor="end" class="t-mono">Q(L)</text>
+      <line x1="40" y1="226" x2="40" y2="22" class="axis" marker-end="url(#ah3)"/>
+      <text x="48" y="18" class="t-sm">dist(P_b)</text>
+      <line x1="40" y1="226" x2="846" y2="226" class="axis" marker-end="url(#ah3)"/>
+      <text x="846" y="246" text-anchor="end" class="t-sm">draws, sorted by upper bound</text>
+      <!-- settled below: i = 0..12, x = 60 + 32 i -->
+      <path d="M60,200 V212 M92,192 V206 M124,186 V200 M156,178 V196 M188,172 V186 M220,166 V182 M252,160 V172 M284,154 V170 M316,148 V160 M348,142 V156 M380,136 V150 M412,128 V146 M444,122 V138" class="br-settled"/>
+      <!-- overlapping the band: i = 13..17 -->
+      <path d="M476,112 V132 M508,104 V124 M540,100 V110 M572,90 V108 M604,84 V99" class="br-hot"/>
+      <!-- settled above: i = 18..23 -->
+      <path d="M636,78 V92 M668,70 V86 M700,64 V80 M732,58 V72 M764,50 V66 M796,40 V58" class="br-settled"/>
+      <text x="62" y="70" class="t-sm">below the band: settled, no more work</text>
+      <text x="540" y="168" text-anchor="middle" class="t-undec">overlap: re-solved tighter</text>
+      <text x="716" y="132" text-anchor="middle" class="t-sm">above the band: settled</text>
+    </svg>
+  </div>
+  <figcaption>Schematic, not data. Each vertical bar is one draw's bracket. Tightening a settled draw cannot move Q(L) or Q(U), so its work would be wasted. On AI the p-value is decided by the screen alone, but the CI must certify the upper tail: several hundred draws.</figcaption>
+</figure>
+
+<!-- ================================================================== 7 -->
+<h2 id="params"><span class="num">7</span>Parameters and defaults</h2>
+<p>Every parameter can be set per call. Defaults live in <code>defaults.BOOTSTRAP</code>. Only the choices (a panel or replies) are required; n is counted from them unless given.</p>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Parameter</th><th>Default</th><th>Why</th><th>DSR · AI</th></tr></thead>
+  <tbody>
+    <tr><td><code>n</code></td><td>from the data</td><td>The units behind p̂; it sets r<sub>n</sub> and ε<sub>n</sub>. Unless given: the number of unique respondents in a panel, or the most replies on any menu. A given n is checked against the data.</td><td>520 respondents · 100 replies per menu</td></tr>
+    <tr><td><code>panel</code> or <code>replies</code></td><td><b>required</b>, one of them</td><td>The choices behind p̂, one row per choice (<a href="#panel">§4</a>). A panel draw reweights whole respondents, so each respondent's answers stay together; a replies draw resamples each menu on its own.</td><td>520 × 10 rows · 8,807 × 100 replies</td></tr>
+    <tr><td><code>B</code></td><td>10,000</td><td>The paper's AI and DSR runs; <code>final_results/Application_DSR</code> also lists DSR runs at B = 1,000.</td><td><span class="yes">matches</span> · <span class="yes">matches</span></td></tr>
+    <tr><td><code>weights</code></td><td>multinomial_reject</td><td>Panel only. The respondent bootstrap, redrawing any resample that leaves a menu unseen. The others: multinomial, exponential, poisson, mammen.</td><td><span class="yes">matches</span> · <span class="yes">matches</span></td></tr>
+    <tr><td><code>seed</code></td><td>0</td><td><code>numpy.random.default_rng(seed)</code>.</td><td><span class="yes">matches</span> · <span class="yes">matches</span></td></tr>
+    <tr><td><code>r_n</code></td><td>√n</td><td>Hong and Li.</td><td>22.80 · 10</td></tr>
+    <tr><td><code>eps_n</code></td><td>n<sup>−1/3</sup></td><td>The exponent 1/3, so ε<sub>n</sub> → 0 while r<sub>n</sub>ε<sub>n</sub> = n<sup>1/6</sup> → ∞.</td><td>0.1243 · 0.2154</td></tr>
+    <tr><td><code>alpha</code></td><td>0.05</td><td>Optional. It is an argument of <code>p_value()</code>, <code>confidence_interval()</code> and <code>distance_interval()</code>, so one run serves every level. The p-value does not depend on α: α only sets <code>reject</code> = (p ≤ α), and asking at a second α needs no new solves unless <code>stop_when_decided</code> is on. For the interval α is the level (0.05 gives a one-sided 95 % interval); a new α re-solves only the draws whose brackets straddle the new quantile.</td><td><span class="yes">matches</span> · <span class="yes">matches</span></td></tr>
+    <tr><td><code>abs_tol</code>, <code>rel_tol</code></td><td>5e-4, 0</td><td>Each application's per-solve criterion, used for p̂ and for the draws.</td><td><span class="yes">matches</span> · <span class="yes">matches</span></td></tr>
+    <tr><td><code>refine</code></td><td>2</td><td>Tenfold tighter rounds for what is still open (5e-5, then 5e-6). DSR needed 1e-5 to settle every draw. With <code>refine=0</code> you get the single-tolerance protocol, undecided counted 1.</td><td>DSR's dynamic threshold</td></tr>
+    <tr><td><code>method</code>, <code>method_args</code></td><td>automatic, {}</td><td>The class's rule and its dtype "auto" (the most precise format that fits). The AI rows were tuned with β = 5 and check 25; set them with <code>method_args</code> to match.</td><td>flow_cg · bm_admm</td></tr>
+    <tr><td><code>max_time</code></td><td>3600 s</td><td>For the p̂ certificate (the class's default).</td><td></td></tr>
+    <tr><td><code>draw_time</code></td><td>120 s</td><td>Per draw. A capped draw is undecided and counts 1.</td><td><span class="yes">matches</span> · none set</td></tr>
+    <tr><td><code>vcov</code></td><td>None</td><td>Plain L2, as in both applications. A weighted norm runs on the Gurobi methods only.</td><td><span class="yes">matches</span> · <span class="yes">matches</span></td></tr>
+    <tr><td><code>checkpoint</code></td><td>None</td><td>A file path: brackets saved every 60 s, and a matching file is resumed (data, draws and settings fingerprints must agree).</td><td></td></tr>
+    <tr><td><code>verbose</code></td><td>False</td><td>Progress every 10 % of the draws.</td><td></td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ================================================================== 8 -->
+<h2 id="apps"><span class="num">8</span>The two applications</h2>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Data</th><th class="num">n alt.</th><th class="num">M cells</th><th>Units (n)</th><th>Automatic method</th><th>p (B = 10,000)</th><th>Draws fingerprint</th></tr></thead>
+  <tbody>
+    <tr><td>DSR alt0</td><td class="num">25</td><td class="num">301</td><td>520 respondents × 10 menus</td><td>flow_cg, float32 pricing</td><td class="num">0.1083</td><td><code>371b8c265e45dcc5</code></td></tr>
+    <tr><td>DSR full</td><td class="num">25</td><td class="num">901</td><td>520 respondents × 10 menus</td><td>flow_cg, float32 pricing</td><td class="num">0.1392</td><td><code>77b8fdd561bf24e0</code></td></tr>
+    <tr><td>AI gpt-5.6-luna</td><td class="num">18</td><td class="num">73,492</td><td>100 replicates × 8,807 menus</td><td>bm_admm, float64</td><td class="num">0</td><td><code>be60cf2019b92f26</code></td></tr>
+    <tr><td>AI deepseek-v4-flash</td><td class="num">18</td><td class="num">73,492</td><td>100 replicates; 165 replies dropped</td><td>bm_admm, float64</td><td class="num">0</td><td><code>3f68c90d7e594502</code></td></tr>
+    <tr><td>AI gpt-6 luna, no reasoning</td><td class="num">18</td><td class="num">73,492</td><td>2,000 replicates × 8,807 menus</td><td>bm_admm, float64</td><td class="num">0</td><td><code>7f270d9c7674cb8c</code></td></tr>
+    <tr><td>AI GMI Cloud</td><td class="num">18</td><td class="num">73,492</td><td>2,000 replicates × 8,807 menus; 2,414 replies dropped</td><td>bm_admm, float64</td><td class="num">0</td><td><code>d11284a7f3384f9f</code></td></tr>
+  </tbody>
+</table>
+</div>
+<p>The fingerprints are those of the records: the same settings draw the same points again from <code>final_data/</code>.</p>
+<h3>The results</h3>
+<p>B = 10,000 multinomial_reject draws, seed 0, abs 5e-4, rel 0, refine 2, one run per data set on an idle RTX 5090.</p>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Data</th><th>Method</th><th class="num">p</th><th class="num">Below / above / undecided</th><th class="num">Screened / solved</th><th class="num">p time</th><th>95 % interval</th><th class="num">Interval time</th></tr></thead>
+  <tbody>
+    <tr><td>DSR alt0</td><td>flow_cg, float32 (auto)</td><td class="num">0.1083</td><td class="num">8,917 / 1,083 / 0</td><td class="num">2,378 / 7,622</td><td class="num">688 s</td><td>[−0.0476, ∞)</td><td class="num">237 s, 592 draws</td></tr>
+    <tr><td>DSR full</td><td>flow_cg, float32 (auto)</td><td class="num">0.1392</td><td class="num">8,608 / 1,392 / 0</td><td class="num">1,055 / 8,945</td><td class="num">1,499 s</td><td>[−0.0902, ∞)</td><td class="num">680 s, 649 draws</td></tr>
+    <tr><td>AI gpt-5.6-luna</td><td>bm_admm, β 5, check 25</td><td class="num">0</td><td class="num">10,000 / 0 / 0</td><td class="num">10,000 / 0</td><td class="num">21.9 s</td><td>two-sided, <a href="#ai-ci">below</a></td><td class="num"></td></tr>
+    <tr><td>AI deepseek-v4-flash</td><td>bm_admm, β 5, check 25</td><td class="num">0</td><td class="num">10,000 / 0 / 0</td><td class="num">10,000 / 0</td><td class="num">21.5 s</td><td>two-sided, <a href="#ai-ci">below</a></td><td class="num"></td></tr>
+    <tr><td>AI gpt-6 luna, no reasoning (n = 2,000)</td><td>bm_admm, β 5, check 25</td><td class="num">0</td><td class="num">10,000 / 0 / 0</td><td class="num">10,000 / 0</td><td class="num">110.5 s</td><td>two-sided, <a href="#ai-ci">below</a></td><td class="num"></td></tr>
+    <tr><td>AI GMI Cloud (n = 2,000)</td><td>bm_admm, β 5, check 25</td><td class="num">0</td><td class="num">10,000 / 0 / 0</td><td class="num">10,000 / 0</td><td class="num">130.9 s</td><td>two-sided, <a href="#ai-ci">below</a></td><td class="num"></td></tr>
+  </tbody>
+</table>
+</div>
+<ul>
+  <li><b>Every draw is decided.</b> On DSR each of the 10,000 decisions equals that of a separate run that solved every draw to abs 1e-5, and that of the IP-CG and IP-H-CG cluster runs (<code>replication/cgip/cluster_records/</code>). On AI every draw is below (largest screen bound 0.555 τ<sub>lo</sub> and 0.682 τ<sub>lo</sub>).</li>
+  <li><b>One run settles every draw.</b> At abs 5e-4, 2 draws (alt0) and 13 (full) are undecided; <code>refine</code> settles them inside the same run. tab:dsg prints this run: 688 s and 1,499 s.</li>
+  <li><b>The interval, cross-checked.</b> The 1,000 DSR draws with the largest upper bounds were solved again to abs 5e-6. Every tight bracket overlaps the stored one, the quantile is pinned to 3e-8 (alt0), and the exact lower end, in [−0.0476203, −0.0476199], lies inside the reported bracket [−0.0476203, −0.0475303]. On full the quantile is pinned to 6.5e-8, and the exact lower end, in [−0.0901695, −0.0901691], lies inside [−0.0901698, −0.0900137]. Both reported lower ends are within 1e-6 of the exact ones.</li>
+  <li><b>Both DSR intervals contain 0</b>, consistent with p &gt; 0.05.</li>
+  <li><b>The other rows of <code>final_results</code>.</b> AI with Flow-CG: p = 0 in 36 s and 105 s (gpt-5.6-luna, deepseek-v4-flash) and in 106 s and 545 s (gpt-6 luna, GMI Cloud). DSR at B = 1,000: p = 0.108 and 0.143 in 70 s and 152 s.</li>
+  <li><b>The 2,000-reply data: gpt-6 luna.</b> gpt-6 luna without reasoning: the same 8,807 menus, each put to the model 2,000 times (17,614,000 replies, none dropped), stored as a 29 MB table (<code>gpt6luna_noreason.npz</code>) since the raw jsonl is 2.1 GB. The same procedure with n = 2,000: dist(p̂) in [13.3892, 13.3897] after 14,850 BM-ADMM iterations (13 s), τ<sub>lo</sub> = 60.91, and every draw screened below in 97 s, so p = 0.</li>
+  <li><b>The 2,000-reply data: GMI Cloud.</b> The same 8,807 menus, each put to the model 2,000 times through GMI Cloud: 17,614,000 replies, 2,414 of them unparseable and dropped, so every menu keeps at least 1,995. It is stored as <code>gmicloud.npz</code> (31 MB). The same procedure with n = 2,000 gives dist(p̂) in [7.2202, 7.2207] with BM-ADMM (23,425 iterations, 19.5 s) and [7.2201, 7.2206] with Flow-CG (2,640 columns, 435 s). τ<sub>lo</sub> = 32.85, every draw is screened below, and p = 0.</li>
+</ul>
+<h3 id="ai-ci">AI distance intervals</h3>
+<p>The paper's application section reports a two-sided 95 % interval for the distance, not Hong and Li's one-sided
+one: [max(0, L<sub>0</sub> − c), U<sub>0</sub> + c], the certified bracket on dist(p̂) widened by c, the 95 % quantile of
+‖p̂<sub>b</sub> − p̂‖ over the draws. It is valid because |dist(p) − dist(p̂)| ≤ ‖p − p̂‖ for the distance to any
+convex set, so it needs no draw solved: <code>boot.distance_interval()</code> reads c off the screen's pass over the
+draws. Its draws are menu by menu (<code>--input replies</code>: each menu's replies resampled on their own,
+multinomial, B = 10,000, seed 0). One BM-ADMM run per data set (β 5, check 25), on an idle RTX 5090;
+p = 0 on every set, all 10,000 draws screened below.</p>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Data</th><th class="num">n</th><th class="num">dist(p̂) in [L<sub>0</sub>, U<sub>0</sub>]</th><th class="num">c</th><th>95 % interval</th><th>Paper</th><th class="num">Run (p and interval)</th></tr></thead>
+  <tbody>
+    <tr><td>AI gpt-5.6-luna</td><td class="num">100</td><td class="num">[13.510657, 13.511156]</td><td class="num">6.9326</td><td>[6.578, 20.444]</td><td></td><td class="num">42 s</td></tr>
+    <tr><td>AI deepseek-v4-flash</td><td class="num">100</td><td class="num">[11.151396, 11.151895]</td><td class="num">7.6143</td><td>[3.537, 18.766]</td><td></td><td class="num">53 s</td></tr>
+    <tr><td>AI gpt-6 luna, no reasoning</td><td class="num">2,000</td><td class="num">[13.389228, 13.389728]</td><td class="num">1.4472</td><td>[11.942, 14.837]</td><td>[11.942, 14.836] <span class="yes">matches</span></td><td class="num">45 s</td></tr>
+    <tr><td>AI GMI Cloud</td><td class="num">2,000</td><td class="num">[7.220187, 7.220685]</td><td class="num">1.7673</td><td>[5.453, 8.988]</td><td>[5.453, 8.988] <span class="yes">matches</span></td><td class="num">69 s</td></tr>
+  </tbody>
+</table>
+</div>
+<ul>
+  <li><b>The paper's two intervals are reproduced.</b> The paper's "DeepSeek V4 Flash" is the GMI Cloud data (2,000 replies per menu). The upper end 14.837 against 14.836 is within the certificate's 5e-4 bracket: [max(0, L<sub>0</sub> − c), U<sub>0</sub> + c] holds the interval for every dist(p̂) in [L<sub>0</sub>, U<sub>0</sub>].</li>
+  <li><b>With the panel draws</b> of the table above (the replicate as the respondent) the same formula gives [11.917, 14.862] and [5.418, 9.023]: a little wider, because the replicate grouping spreads the draws more.</li>
+  <li><b>No one-sided Hong–Li interval on the AI data.</b> It would need several hundred to several thousand upper-tail draws solved to tolerance (an estimated 1.2–9 h per data set); the two-sided interval needs none.</li>
+  <li><b>The records</b> are <code>replication/empirical_ai_n18/results/bootstrap_ai_&lt;model&gt;_replies.json</code>; <code>final_results/Application_AI/</code> lists them with the interval columns <code>dci_lower</code>, <code>dci_upper</code> and <code>dci_half_width</code>.</li>
+</ul>
+<h3>The AI data as replies</h3>
+<p>The same AI rows, p̂ and certificate, with the draws made the two ways (B = 10,000, seed 0). Computed on one CPU core without a solve: the p̂ certificate gives [L<sub>0</sub>, U<sub>0</sub>] and τ, which do not depend on the input.</p>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Data</th><th>Input</th><th class="num">Mean ‖p̂<sub>b</sub> − p̂‖</th><th class="num">Its sd</th><th class="num">Largest no-solve bound / τ<sub>lo</sub></th><th class="num">p</th></tr></thead>
+  <tbody>
+    <tr><td>AI gpt-5.6-luna</td><td>panel, replicate as respondent</td><td class="num">6.857</td><td class="num">0.488</td><td class="num">0.777</td><td class="num">0</td></tr>
+    <tr><td></td><td>replies</td><td class="num">6.872</td><td class="num">0.037</td><td class="num">0.672</td><td class="num">0</td></tr>
+    <tr><td>AI deepseek-v4-flash</td><td>panel, replicate as respondent</td><td class="num">7.541</td><td class="num">0.537</td><td class="num">0.920</td><td class="num">0</td></tr>
+    <tr><td></td><td>replies</td><td class="num">7.559</td><td class="num">0.034</td><td class="num">0.788</td><td class="num">0</td></tr>
+  </tbody>
+</table>
+</div>
+<ul>
+  <li><b>Same spread per menu, linked menus.</b> Each menu's draws have the same distribution either way (identical on Luna, where every replicate answered every menu once), so the mean distance of a draw from p̂ agrees. The replicate grouping ties all 8,807 menus to the same 100 picks, and the size of a draw then varies 13 to 16 times more.</li>
+  <li><b>p = 0 either way.</b> The bound U<sub>0</sub> + ε<sub>n</sub>r<sub>n</sub>‖p̂<sub>b</sub> − p̂‖ needs no solve and is looser than the screen (the screens' largest values are 0.555 and 0.682 of τ<sub>lo</sub>); it already puts every draw below τ<sub>lo</sub> with both inputs.</li>
+  <li><b>The interval differs.</b> The replicate grouping spreads the draws more, so it gives the more conservative interval: the two-sided interval is [11.917, 14.862] on gpt-6 luna and [5.418, 9.023] on GMI Cloud with the panel, [11.942, 14.837] and [5.453, 8.988] with the replies (<a href="#ai-ci">above</a>).</li>
+  <li><b>With few replicates the choice can change a decision.</b> On a toy with 26 menus and 12 replies each, the panel gave p = 0.077 and the replies p = 0.007.</li>
+</ul>
+
+
+<!-- ================================================================== 9 -->
+<h2 id="choices"><span class="num">9</span>Design choices</h2>
+<p>Where the reference procedure leaves room, these are the choices made, and why.</p>
+<div class="decide">
+  <div class="card"><h3><span class="k">1</span>Where the draws come from</h3>
+    <p>n and p̂ fix the scaling, but not the bootstrap distribution: resampling needs the choices behind p̂, who saw which menu and chose what. The reference's <code>bootstrap_p_from_panel</code> takes a units × cells 0/1 matrix and averages over all units, which assumes every unit answered every menu; a DSR respondent answered 10 of the 301.</p>
+    <p class="rec"><b>Choice:</b> the input is the long table of choices, in one of two styles (<a href="#styles-h">above</a>): a panel, whose respondents are resampled, or replies, whose menus are resampled one by one. A cell's draw divides by the weighted number of times its menu was seen. Per-menu counts alone and precomputed draws are not accepted.</p></div>
+  <div class="card"><h3><span class="k">2</span>The AI data: replicates or replies</h3>
+    <p>Every ask of a menu, 100 or 2,000 of them, is a separate call, so there is no real respondent. Resampling replicate numbers is valid, since the replicates are independent copies of the design, but it ties every menu's draw to the same picks; resampling each menu on its own matches how the data were made.</p>
+    <p class="rec"><b>Choice:</b> both are available. The paper's AI p-values and the application tables use the replicate as the respondent; <code>--input replies</code> runs the menu-by-menu version, which the paper's AI intervals use. Both give p = 0 (<a href="#apps">§8</a>).</p></div>
+  <div class="card"><h3><span class="k">3</span>Form of the confidence interval</h3>
+    <p>The reference gives the one-sided [lower, ∞), the dual of the test. Its lower end can be negative.</p>
+    <p class="rec"><b>Choice:</b> both. <code>confidence_interval()</code> is the reference's one-sided interval, with the lower end reported as computed and as max(0, ·). <code>distance_interval()</code> is the two-sided interval of the paper's application section, [max(0, L₀ − c), U₀ + c] with c the (1 − α)-quantile of ‖p̂<sub>b</sub> − p̂‖; the distance to a convex set moves by at most ‖p − p̂‖, so it needs no solve.</p></div>
+  <div class="card"><h3><span class="k">4</span>Tolerance and refinement</h3>
+    <p>The applications certify at abs 5e-4, which leaves a few DSR draws undecided: 2 on alt0, 13 on full.</p>
+    <p class="rec"><b>Choice:</b> abs 5e-4, rel 0, and up to two tenfold tighter rounds (5e-5, 5e-6) for p̂ and the draws still undecided. <code>refine=0</code> keeps the reference protocol exactly.</p></div>
+  <div class="card"><h3><span class="k">5</span>Cost of the confidence interval</h3>
+    <p>The interval needs certified lower bounds near the (1 − α)-quantile. On AI the p-value costs one certificate and the screen, while the interval must certify several hundred upper-tail draws.</p>
+    <p class="rec"><b>Choice:</b> computed only when asked, to about 2 × abs_tol. DSR: 592 and 649 draws, 4 and 11 min. AI: about 600 draws on the 100-replicate data sets and 1,500 to 3,900 on the 2,000-replicate ones (estimates); it is not computed there, because the paper reports the two-sided interval, which costs no solve (<a href="#ai-ci">§8</a>).</p></div>
+  <div class="card"><h3><span class="k">6</span>Stopping once the decision is locked</h3>
+    <p>The reference's test mode stops as soon as the decision at α cannot change. On DSR (p ≈ 0.11) that would save about half the solves, but p would then be known only to a bracket.</p>
+    <p class="rec"><b>Choice:</b> <code>p_value(stop_when_decided=True)</code>, off by default.</p></div>
+  <div class="card"><h3><span class="k">7</span>The sample size n</h3>
+    <p>n sets r<sub>n</sub> and ε<sub>n</sub>. A panel knows its respondents (520 for DSR, 100 or 2,000 for AI as a panel), and replies know their replies per menu (100 or 2,000 for AI).</p>
+    <p class="rec"><b>Choice:</b> taken from the data unless given: the number of unique respondents, or the most replies on any menu. A given n is checked: it must equal the number of respondents, or lie between the fewest and the most replies on a menu.</p></div>
+  <div class="card"><h3><span class="k">8</span>The application tables</h3>
+    <p><code>final_results/Application_DSR</code> and <code>final_results/Application_AI</code> list one row per run, solver by solver.</p>
+    <p class="rec"><b>Choice:</b> the GPU rows come from the <code>rum.bootstrap</code> records in <code>replication/empirical_*/results/</code>, with the intervals in the <code>ci_*</code> and <code>dci_*</code> columns; the IP-CG and IP-H-CG rows come from the cluster runs in <code>replication/cgip/cluster_records/</code>.</p></div>
+</div>
+
+<!-- ================================================================== 10 -->
+<h2 id="checks"><span class="num">10</span>How it was checked</h2>
+<p>Two kinds of evidence stand behind this page: tests that anyone can run, and the stored records of the paper's runs.</p>
+<h3>The tests in <code>tests/</code></h3>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Script</th><th>Machine</th><th>What it checks</th></tr></thead>
+  <tbody>
+    <tr><td><code>tests/test_cpu.py</code></td><td class="nowrap">CPU, Gurobi</td><td>the RUM class without a GPU: the input checks, the CPU methods' certified brackets, the exit flags and the documented errors</td></tr>
+    <tr><td><code>tests/test_cgip.py</code></td><td class="nowrap">CPU, Gurobi</td><td>IP-CG (<code>ip_cg</code>) at distance 0, and under its time limit</td></tr>
+    <tr><td><code>tests/test_bootstrap.py</code></td><td class="nowrap">CPU, Gurobi</td><td><code>rum.bootstrap</code> with <code>panel=</code> and <code>replies=</code> on toy data: the draws, the p-value, the one-sided interval, the record, a checkpoint resume, <code>n</code> from the data and the documented errors; and on the 100-reply AI data, every draw below the threshold with no solve</td></tr>
+    <tr><td><code>tests/test_intervals.py</code></td><td class="nowrap">CPU, Gurobi</td><td><code>distance_interval()</code> against its formula on toy data (both inputs, with weights, after a checkpoint resume), and the paper's two AI intervals from the shipped data and the stored certificates, without a solve</td></tr>
+    <tr><td><code>tests/test_gpu.py</code></td><td class="nowrap">GPU</td><td>the automatic choice at n = 10–17 with a certified bracket, and five of the paper's stored races re-run with identical iterations, upper bound and stop reason</td></tr>
+  </tbody>
+</table>
+</div>
+<h3>The stored records</h3>
+<p>Every number in <a href="#apps">§8</a> comes from a record written by the driver beside it. <code>replication/empirical_dsr_n25/run_bootstrap.py --obs alt0</code> (or <code>--obs full</code>) writes <code>results/bootstrap_dsr_&lt;obs&gt;.json</code>; <code>replication/empirical_ai_n18/run_bootstrap.py --model &lt;model&gt;</code> writes <code>results/bootstrap_ai_&lt;model&gt;.json</code>, with <code>_replies</code> for <code>--input replies</code> and a <code>--tag</code> such as <code>_flow_cg</code> for another method. A record holds the settings, the plan line, the fingerprints of the data and the draws, every draw's bracket and decision, and the time of each step, so a re-run can be compared with it draw by draw. <code>final_results/Application_DSR/</code> and <code>final_results/Application_AI/</code> list the records, one row per run.</p>
+<h3>Cross-checks behind the results</h3>
+<ul>
+  <li><b>DSR decisions.</b> All 10,000 decisions of both specifications agree, draw by draw, with a run that solved every draw to abs 1e-5 and with the IP-CG and IP-H-CG cluster runs.</li>
+  <li><b>DSR intervals.</b> The 1,000 draws with the largest upper bounds were solved again to abs 5e-6: the exact lower ends lie inside the reported brackets, within 1e-6 of the reported values (<a href="#apps">§8</a>).</li>
+  <li><b>AI intervals.</b> c from the menu-by-menu draws equals an independent computation (1.4472 and 1.7673), and the two intervals reproduce the paper's.</li>
+  <li><b>The formulas.</b> On toy panels solved exactly, the p-value equals the reference implementation's on the same draws, and the interval's lower end agrees to about 3e-9.</li>
+</ul>
+
+<footer>
+  RUM Bootstrap Inference · rum-testing-gpu, solver/inference. Method: Hong and Li (2018), the numerical delta method. Times were measured on an NVIDIA RTX 5090 desktop, or on one CPU core where stated. The same material in prose: <code>solver/DESIGN_NOTES.md</code>, section Bootstrap inference; how to call it: <code>README.md</code>.
+</footer>
+</main>
+</div>
+</div>
+</body>
+</html>

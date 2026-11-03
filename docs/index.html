@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Testing Random Utility on the GPU</title>
+<meta name="description" content="Certified distances to the random utility polytope on the GPU, the bootstrap test of RUM, and the data behind the paper's tables.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --surface-2: #eaeef3;
+  --ink: #16202b;
+  --ink-2: #4a5667;
+  --ink-3: #737f8f;
+  --rule: #d6dce4;
+  --gpu: #1b5aad;
+  --gpu-soft: #e2ebf8;
+  --cpu: #1e7352;
+  --cpu-soft: #def0e7;
+  --old: #96580b;
+  --old-soft: #f8ecd8;
+  --link: #1b5aad;
+  --code-bg: #edf1f5;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0e1318;
+    --surface: #161c23;
+    --surface-2: #1d252e;
+    --ink: #e1e7ee;
+    --ink-2: #a2adba;
+    --ink-3: #7d8998;
+    --rule: #2b3541;
+    --gpu: #7cb0f3;
+    --gpu-soft: #172a42;
+    --cpu: #63c89d;
+    --cpu-soft: #132b20;
+    --old: #e5ab5a;
+    --old-soft: #302410;
+    --link: #7cb0f3;
+    --code-bg: #1c242d;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0e1318;
+  --surface: #161c23;
+  --surface-2: #1d252e;
+  --ink: #e1e7ee;
+  --ink-2: #a2adba;
+  --ink-3: #7d8998;
+  --rule: #2b3541;
+  --gpu: #7cb0f3;
+  --gpu-soft: #172a42;
+  --cpu: #63c89d;
+  --cpu-soft: #132b20;
+  --old: #e5ab5a;
+  --old-soft: #302410;
+  --link: #7cb0f3;
+  --code-bg: #1c242d;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: 16px; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.6 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+a { color: var(--link); text-underline-offset: 2px; }
+a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-radius: 3px; }
+code, pre { font-family: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace; }
+code { font-size: .88em; background: var(--code-bg); padding: .08em .32em; border-radius: 4px; }
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 0;
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.55;
+}
+pre code { background: none; padding: 0; font-size: inherit; }
+.cm { color: var(--ink-3); }
+h1, h2, h3, h4 {
+  font-family: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
+  line-height: 1.2;
+  margin: 0;
+  text-wrap: balance;
+}
+h1 { font-size: clamp(2rem, 4.2vw, 2.7rem); font-weight: 600; letter-spacing: -.01em; }
+h2 {
+  font-size: 1.55rem;
+  font-weight: 600;
+  margin: 56px 0 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
+}
+h2 .num { font-family: "IBM Plex Mono", monospace; font-size: .8em; color: var(--ink-3); font-weight: 500; margin-right: .35em; }
+h3 { font-size: 1.18rem; font-weight: 600; }
+h4 {
+  font-size: .76rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--ink-2);
+  margin: 18px 0 6px;
+}
+p, li { max-width: 72ch; }
+p { margin: 10px 0; }
+ul, ol { padding-left: 1.3em; }
+li { margin: 4px 0; }
+
+.wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+header.top { padding: 40px 0 4px; }
+.eyebrow { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--ink-2); letter-spacing: .02em; margin: 0 0 10px; }
+.lede { font-size: 1.1rem; color: var(--ink-2); max-width: 66ch; margin: 14px 0 0; }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; }
+nav.toc { font-size: 14px; }
+nav.toc h4 { margin-top: 0; }
+nav.toc ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 1px; }
+nav.toc li { margin: 0; }
+nav.toc a { display: block; padding: 4px 8px; border-radius: 4px; color: var(--ink-2); text-decoration: none; }
+nav.toc a:hover { background: var(--surface-2); color: var(--ink); }
+@media (min-width: 1100px) {
+  .layout { grid-template-columns: 200px minmax(0, 1fr); gap: 40px; }
+  nav.toc { position: sticky; top: 20px; align-self: start; max-height: calc(100vh - 40px); overflow: auto; padding-top: 6px; }
+}
+@media (max-width: 1099px) {
+  nav.toc { border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding: 10px 0; }
+  nav.toc ol { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+}
+main { min-width: 0; max-width: 880px; padding-bottom: 72px; }
+
+/* summary rows */
+.facts-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  margin: 22px 0 0;
+}
+.facts-row div { padding: 10px 14px 10px 0; }
+.facts-row dt { font-size: 11.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-2); }
+.facts-row dd { margin: 2px 0 0; font-weight: 500; }
+.status { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; margin: 22px 0 0; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 16px; }
+.card h3 { font-size: 1.05rem; margin: 10px 0 4px; }
+.card p { margin: 4px 0 0; font-size: 15px; }
+.pill { display: inline-block; font: 600 11.5px/1 "IBM Plex Mono", monospace; padding: 5px 8px; border-radius: 999px; letter-spacing: .02em; }
+.pill-ok { background: var(--cpu-soft); color: var(--cpu); }
+.pill-plan { background: var(--old-soft); color: var(--old); }
+
+/* figures */
+figure { margin: 22px 0; }
+.fig-frame { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 12px; overflow-x: auto; }
+svg.dia { display: block; width: 100%; min-width: 780px; height: auto; color: var(--ink); }
+figcaption { font-size: 14px; color: var(--ink-2); margin-top: 8px; max-width: 76ch; }
+.dia text { fill: var(--ink); font-family: "IBM Plex Sans", system-ui, sans-serif; font-size: 12.5px; }
+.dia .t-title { font-family: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif; font-weight: 600; font-size: 14.5px; }
+.dia .t-mono { font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace; font-size: 12px; }
+.dia .t-monob { font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace; font-size: 12.5px; font-weight: 600; }
+.dia .t-sm { font-size: 11.5px; fill: var(--ink-2); }
+.dia .t-xs { font-size: 10.5px; fill: var(--ink-2); }
+.dia .t-gpu { fill: var(--gpu); font-weight: 600; font-size: 12px; }
+.dia .t-cpu { fill: var(--cpu); font-weight: 600; font-size: 12px; }
+.dia .t-old { fill: var(--old); font-weight: 600; font-size: 12px; }
+.dia .box { fill: var(--surface); stroke: var(--rule); stroke-width: 1.2; }
+.dia .box-new { fill: var(--surface); stroke: var(--ink); stroke-width: 1.8; }
+.dia .box-gpu { fill: var(--gpu-soft); stroke: var(--gpu); stroke-width: 1.2; }
+.dia .box-cpu { fill: var(--cpu-soft); stroke: var(--cpu); stroke-width: 1.2; }
+.dia .box-old { fill: var(--old-soft); stroke: var(--old); stroke-width: 1.3; stroke-dasharray: 6 4; }
+.dia .box-tray { fill: var(--surface-2); stroke: var(--rule); stroke-width: 1; }
+.dia .chip { fill: var(--surface); stroke: var(--rule); stroke-width: 1; }
+.dia .arrow { stroke: var(--ink-2); stroke-width: 1.4; fill: none; }
+.dia .arrow-dash { stroke: var(--ink-2); stroke-width: 1.3; fill: none; stroke-dasharray: 5 4; }
+.dia .ah { fill: var(--ink-2); }
+.dia .tick { stroke: var(--ink-2); stroke-width: 1.4; }
+.dia .bar-32 { fill: var(--gpu); }
+.dia .bar-big { fill: var(--gpu-soft); stroke: var(--gpu); stroke-width: 1; stroke-dasharray: 3 2; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--ink-2); margin-top: 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 18px; height: 12px; border-radius: 3px; display: inline-block; }
+.sw-new { background: var(--surface); border: 1.8px solid var(--ink); }
+.sw-old { background: var(--old-soft); border: 1.4px dashed var(--old); }
+.sw-gpu { background: var(--gpu-soft); border: 1.2px solid var(--gpu); }
+.sw-cpu { background: var(--cpu-soft); border: 1.2px solid var(--cpu); }
+.sw-32 { background: var(--gpu); }
+.sw-big { background: var(--gpu-soft); border: 1px dashed var(--gpu); }
+
+/* tables */
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; font-variant-numeric: tabular-nums; }
+th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  border-bottom: 1.5px solid var(--ink-3);
+  padding: 6px 14px 6px 0;
+  white-space: nowrap;
+}
+td { border-bottom: 1px solid var(--rule); padding: 7px 14px 7px 0; vertical-align: top; }
+td.num, th.num { text-align: right; }
+td.nowrap { white-space: nowrap; }
+.fast { font-weight: 600; }
+.capped { color: var(--old); }
+tr.group td { padding-top: 14px; font-weight: 600; color: var(--ink-2); font-size: 12.5px; text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid var(--rule); }
+.flag { font-family: "IBM Plex Mono", monospace; font-weight: 600; white-space: nowrap; }
+
+/* method cards */
+.method { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 20px 22px; margin: 18px 0; }
+.method-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.method-head h3 code { font-size: 1.12em; background: none; padding: 0; }
+.tag { font: 500 11.5px/1 "IBM Plex Mono", monospace; padding: 5px 7px; border-radius: 4px; border: 1px solid var(--rule); color: var(--ink-2); white-space: nowrap; }
+.tag-gpu { background: var(--gpu-soft); color: var(--gpu); border-color: transparent; }
+.tag-cpu { background: var(--cpu-soft); color: var(--cpu); border-color: transparent; }
+.paper { margin-left: auto; font-size: 13px; color: var(--ink-2); }
+.method .lede-m { margin: 10px 0 4px; color: var(--ink-2); }
+dl.kv { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px 18px; margin: 14px 0 6px; }
+@media (min-width: 700px) { dl.kv { grid-template-columns: 124px minmax(0, 1fr); } }
+dl.kv dt { font-weight: 600; font-size: 13.5px; color: var(--ink-2); padding-top: 1px; }
+dl.kv dd { margin: 0 0 9px; max-width: 70ch; }
+.calls { display: grid; gap: 10px; margin-top: 8px; }
+.calls h4 { margin: 8px 0 4px; }
+.watch { margin: 14px 0 0; font-size: 15px; }
+.watch strong { color: var(--old); }
+
+.steps { counter-reset: step; list-style: none; padding: 0; }
+.steps > li { counter-increment: step; position: relative; padding-left: 2.2em; margin: 14px 0; max-width: none; }
+.steps > li::before {
+  content: counter(step);
+  position: absolute; left: 0; top: .05em;
+  font: 600 13px/1.6em "IBM Plex Mono", monospace;
+  width: 1.6em; height: 1.6em; text-align: center;
+  border-radius: 50%; background: var(--surface-2); color: var(--ink);
+}
+.steps > li > p { max-width: 70ch; }
+.note { color: var(--ink-2); font-size: 14.5px; }
+footer { border-top: 1px solid var(--rule); margin-top: 48px; padding-top: 14px; font-size: 13.5px; color: var(--ink-2); }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+/* the four pages share one header bar */
+nav.site { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 14px 0 12px; border-bottom: 1px solid var(--rule); font-size: 14px; }
+nav.site .brand { font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace; font-weight: 600; font-size: 13.5px; color: var(--ink); text-decoration: none; margin-right: 14px; }
+nav.site a.pg { color: var(--ink-2); text-decoration: none; padding: 4px 10px; border-radius: 4px; }
+nav.site a.pg:hover { background: var(--surface-2); color: var(--ink); }
+nav.site a.pg[aria-current="page"] { color: var(--ink); background: var(--surface); box-shadow: inset 0 0 0 1px var(--rule); font-weight: 500; }
+nav.site .gh { margin-left: auto; color: var(--ink-2); font-size: 13.5px; text-decoration: none; }
+nav.site .gh:hover { color: var(--link); text-decoration: underline; }
+nav.site + header.top { padding-top: 28px; }
+
+/* index and replication */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 14px 0; }
+.cards .card h3 { margin: 6px 0 4px; }
+.cards .card h3 a { text-decoration: none; }
+.cards .card h3 a:hover { text-decoration: underline; }
+.where { display: block; font-size: 12.5px; color: var(--ink-2); margin-top: 2px; }
+table.paths td code { overflow-wrap: anywhere; }
+.result .method-head h3 { font-size: 1.12rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="site" aria-label="Pages">
+  <a class="brand" href="index.html">rum-testing-gpu</a>
+  <a class="pg" href="index.html" aria-current="page">Overview</a>
+  <a class="pg" href="solver.html">Solvers</a>
+  <a class="pg" href="bootstrap.html">Bootstrap</a>
+  <a class="pg" href="replication.html">Replication</a>
+  <a class="gh" href="https://github.com/mingxiz/rum-testing-gpu">Source on GitHub</a>
+</nav>
+<header class="top">
+  <p class="eyebrow">rum-testing-gpu</p>
+  <h1>Testing Random Utility on the GPU</h1>
+  <p class="lede">The code of the paper's algorithms. It measures how far observed choice probabilities p̂ are from the random utility (RUM) polytope, with a certified bracket lb ≤ dist ≤ ub, and tests H<sub>0</sub>: dist = 0 with Hong and Li's bootstrap. Three methods run on an NVIDIA GPU, four on the CPU with Gurobi, and every table of the paper can be rebuilt from the data in the repository.</p>
+  <dl class="facts-row">
+    <div><dt>Entry point</dt><dd><code>solver.rum_solver.RUM</code></dd></div>
+    <div><dt>Methods</dt><dd>7: three GPU, four CPU + Gurobi</dd></div>
+    <div><dt>Test of RUM</dt><dd><code>rum.bootstrap(...)</code>, B = 10,000</dd></div>
+    <div><dt>Replication</dt><dd>every paper table, from <code>final_data/</code></dd></div>
+  </dl>
+</header>
+
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+  <h4>Contents</h4>
+  <ol>
+    <li><a href="#what">1 · What it computes</a></li>
+    <li><a href="#methods">2 · The methods</a></li>
+    <li><a href="#install">3 · Install</a></li>
+    <li><a href="#start">4 · Quick start</a></li>
+    <li><a href="#layout">5 · The repository</a></li>
+    <li><a href="#pages">6 · More pages</a></li>
+  </ol>
+</nav>
+
+<main>
+<h2 id="what"><span class="num">1</span>What it computes</h2>
+<p>The data are choice probabilities p̂(a | D): how often alternative a was chosen from menu D, on the observed (menu, alternative) cells. A random utility model is a probability distribution over rankings of the alternatives, and the choice probabilities it can produce form a polytope. The distance dist(p̂) = min ‖p − p̂‖ over the points p of that polytope is 0 exactly when the data are consistent with some random utility model.</p>
+<p>Every method returns a bracket lb ≤ dist(p̂) ≤ ub, not an estimate: ub is the distance of an exactly feasible RUM point, and lb comes from a certificate (a Frank–Wolfe bound, or the pricing integer program's bound). The bootstrap builds Hong and Li's test of H<sub>0</sub>: dist = 0 on top of those brackets, so its p-value and intervals are certified too.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="dia" viewBox="0 0 880 350" role="img" aria-label="The pipeline. Your data, choice probabilities on the observed menus and alternatives or the choices behind them, build a RUM object. calculate_distance returns a certified bracket lb ≤ dist ≤ ub; bootstrap returns the Hong–Li p-value and intervals. Both run the same engines: bm_admm, flow_cg and flow_admm on the GPU, and ip_cg, ip_cg_heur, bm_qp and flow_qp on the CPU with Gurobi.">
+    <defs>
+      <marker id="ahx" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path class="ah" d="M0,0 L10,5 L0,10 z"/>
+      </marker>
+    </defs>
+    <rect class="box" x="16" y="80" width="180" height="100" rx="6"/>
+    <text class="t-title" x="30" y="106">Your data</text>
+    <text class="t-sm" x="30" y="128">p̂ on the observed</text>
+    <text class="t-sm" x="30" y="145">(menu, alternative) cells,</text>
+    <text class="t-sm" x="30" y="162">or the choices behind it</text>
+
+    <rect class="box-new" x="226" y="80" width="190" height="100" rx="6"/>
+    <text class="t-monob" x="240" y="106">RUM(menu, alt, p̂)</text>
+    <text class="t-sm" x="240" y="128">checks the data once</text>
+    <text class="t-sm" x="240" y="145">keeps the geometry</text>
+    <text class="t-xs" x="240" y="164">solver/rum_solver.py</text>
+
+    <rect class="box-new" x="446" y="30" width="200" height="80" rx="6"/>
+    <text class="t-monob" x="460" y="56">calculate_distance()</text>
+    <text class="t-sm" x="460" y="78">one certified solve,</text>
+    <text class="t-sm" x="460" y="95">or the paper's race (opt=)</text>
+
+    <rect class="box-new" x="446" y="150" width="200" height="80" rx="6"/>
+    <text class="t-monob" x="460" y="176">bootstrap(panel=…)</text>
+    <text class="t-sm" x="460" y="198">Hong–Li test of dist = 0</text>
+    <text class="t-xs" x="460" y="216">solver/inference/</text>
+
+    <rect class="box" x="676" y="30" width="188" height="80" rx="6"/>
+    <text class="t-title" x="690" y="56">lb ≤ dist ≤ ub</text>
+    <text class="t-sm" x="690" y="78">a certified bracket,</text>
+    <text class="t-sm" x="690" y="95">exit flag, fitted point</text>
+
+    <rect class="box" x="676" y="150" width="188" height="80" rx="6"/>
+    <text class="t-title" x="690" y="176">p-value, intervals</text>
+    <text class="t-sm" x="690" y="198">from every draw's</text>
+    <text class="t-sm" x="690" y="215">certified bracket</text>
+
+    <line class="arrow" x1="196" y1="130" x2="223" y2="130" marker-end="url(#ahx)"/>
+    <polyline class="arrow" points="416,112 431,112 431,70 443,70" marker-end="url(#ahx)"/>
+    <polyline class="arrow" points="416,148 431,148 431,190 443,190" marker-end="url(#ahx)"/>
+    <line class="arrow" x1="646" y1="70" x2="673" y2="70" marker-end="url(#ahx)"/>
+    <line class="arrow" x1="646" y1="190" x2="673" y2="190" marker-end="url(#ahx)"/>
+    <line class="arrow-dash" x1="546" y1="230" x2="546" y2="261" marker-end="url(#ahx)"/>
+    <text class="t-sm" x="556" y="251">both run the same engines</text>
+
+    <rect class="box-tray" x="16" y="264" width="848" height="76" rx="8"/>
+    <text class="t-title" x="30" y="300">Engines</text>
+    <text class="t-gpu" x="130" y="285">GPU · CuPy</text>
+    <text class="t-cpu" x="470" y="285">CPU · Gurobi</text>
+    <rect class="box-gpu" x="130" y="296" width="96" height="30" rx="5"/>
+    <text class="t-monob" x="178" y="316" text-anchor="middle">bm_admm</text>
+    <rect class="box-gpu" x="234" y="296" width="96" height="30" rx="5"/>
+    <text class="t-monob" x="282" y="316" text-anchor="middle">flow_cg</text>
+    <rect class="box-gpu" x="338" y="296" width="96" height="30" rx="5"/>
+    <text class="t-monob" x="386" y="316" text-anchor="middle">flow_admm</text>
+    <rect class="box-cpu" x="470" y="296" width="92" height="30" rx="5"/>
+    <text class="t-monob" x="516" y="316" text-anchor="middle">ip_cg</text>
+    <rect class="box-cpu" x="570" y="296" width="96" height="30" rx="5"/>
+    <text class="t-monob" x="618" y="316" text-anchor="middle">ip_cg_heur</text>
+    <rect class="box-cpu" x="674" y="296" width="88" height="30" rx="5"/>
+    <text class="t-monob" x="718" y="316" text-anchor="middle">bm_qp</text>
+    <rect class="box-cpu" x="770" y="296" width="88" height="30" rx="5"/>
+    <text class="t-monob" x="814" y="316" text-anchor="middle">flow_qp</text>
+  </svg>
+  </div>
+  <figcaption>One object per data set, two calls on it. Both calls reach the same seven engine functions, so each method has one implementation; the class chooses the method when none is named.</figcaption>
+</figure>
+
+<h2 id="methods"><span class="num">2</span>The methods</h2>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Method</th><th>Paper</th><th>Runs on</th><th>Chosen automatically</th><th>What it is</th></tr></thead>
+  <tbody>
+    <tr><td class="nowrap"><code>bm_admm</code></td><td class="nowrap">BM-ADMM</td><td>GPU</td><td>dense designs: from 2 % density at n = 11–13, 1 % at 14–17, 0.5 % from 18, when it fits</td><td>ADMM on the Block–Marschak formulation, matrix-free</td></tr>
+    <tr><td class="nowrap"><code>flow_cg</code></td><td class="nowrap">Flow-CG</td><td>GPU</td><td>sparse designs, every design up to n = 10, and wherever bm_admm does not fit</td><td>column generation over rankings, Bellman–Ford pricing on the subset lattice</td></tr>
+    <tr><td class="nowrap"><code>flow_admm</code></td><td class="nowrap">Flow-ADMM</td><td>GPU</td><td>never</td><td>ADMM on the arc-flow formulation, with a prestored dense matrix</td></tr>
+    <tr><td class="nowrap"><code>ip_cg</code></td><td class="nowrap">IP-CG</td><td>CPU, Gurobi</td><td>never</td><td>column generation with exact integer-programming pricing; any weight matrix</td></tr>
+    <tr><td class="nowrap"><code>ip_cg_heur</code></td><td class="nowrap">IP-H-CG</td><td>CPU, Gurobi</td><td>without a GPU, n &gt; 10</td><td>IP-CG with random-insertion pricing tried first</td></tr>
+    <tr><td class="nowrap"><code>bm_qp</code></td><td>—</td><td>CPU, Gurobi</td><td>never (n ≤ 15)</td><td>the Block–Marschak QP, solved by Gurobi</td></tr>
+    <tr><td class="nowrap"><code>flow_qp</code></td><td>—</td><td>CPU, Gurobi</td><td>without a GPU, n ≤ 10</td><td>the arc-flow QP, solved by Gurobi</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="note">With a weight matrix (<code>vcov</code>) only the Gurobi methods apply. The rule and its measurements are on the <a href="solver.html#auto">Solvers page, §4</a>.</p>
+
+<h2 id="install"><span class="num">3</span>Install</h2>
+<pre><code>pip install -r requirements.txt     <span class="cm"># numpy, scipy, numba, pandas</span></code></pre>
+<ul>
+  <li><strong>GPU methods</strong> (BM-ADMM, Flow-CG, Flow-ADMM): an NVIDIA GPU and the CuPy wheel that matches your CUDA driver, <code>cupy-cuda12x</code> or <code>cupy-cuda13x</code>.</li>
+  <li><strong>CPU methods</strong> (IP-CG, IP-H-CG and the two exact QPs, which are also the choice when there is no GPU): <code>gurobipy</code> and a Gurobi licence.</li>
+  <li>Python 3.10 or later; the paper's runs used Python 3.12.</li>
+</ul>
+
+<h2 id="start"><span class="num">4</span>Quick start</h2>
+<pre><code>from solver.rum_solver import RUM
+
+<span class="cm"># cd: an (M, 3) array of rows (menu bitmask over alternatives 0..n-1, chosen alternative, p_hat)</span>
+rum = RUM.from_rows(cd, n)
+res = rum.calculate_distance()          <span class="cm"># automatic method; stops at abs 1e-5 or rel 1e-4; 1 h cap</span>
+print(res.lb, res.ub, res.exit_flag)</code></pre>
+<p>The test of RUM needs the choices behind p̂, one row per choice:</p>
+<pre><code>import pandas as pd
+from solver.inference import cells_from_panel
+
+panel = pd.read_csv("final_data/Application_DSR/raw_data/overload_data_25_long.csv")
+menu, alt, p_hat = cells_from_panel(panel, 25, alternatives=[0])
+rum = RUM(menu, alt, p_hat, num_alternatives=25)
+print(rum.bootstrap(panel=panel).p_value())   <span class="cm"># p = 0.1083</span></code></pre>
+
+<h2 id="layout"><span class="num">5</span>The repository</h2>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Folder</th><th>What it holds</th></tr></thead>
+  <tbody>
+    <tr><td class="nowrap"><code>solver/</code></td><td>the RUM class (<code>rum_solver.py</code>), the seven engines, the bootstrap (<code>inference/</code>), the defaults and the machine profile</td></tr>
+    <tr><td class="nowrap"><code>data/</code></td><td>the seeded instance generator and the certified optima, <code>opt_refs.json</code></td></tr>
+    <tr><td class="nowrap"><code>final_data/</code></td><td>the instances of the three synthetic tables, the DSR panel and the AI reply tables</td></tr>
+    <tr><td class="nowrap"><code>final_results/</code></td><td>one CSV per paper table, one row per (instance, solver) or run</td></tr>
+    <tr><td class="nowrap"><code>replication/</code></td><td>one folder per paper result: what it reproduces, the command, and the stored records</td></tr>
+    <tr><td class="nowrap"><code>validation/</code></td><td>the race drivers and the table builders the replication folders run</td></tr>
+    <tr><td class="nowrap"><code>tests/</code></td><td>CPU and GPU checks of the solver and the bootstrap</td></tr>
+    <tr><td class="nowrap"><code>docs/</code></td><td>these pages</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="pages"><span class="num">6</span>More pages</h2>
+<div class="cards">
+  <div class="card"><h3><a href="solver.html">Solvers</a></h3><p>The RUM class step by step: interfaces, the automatic choice, the certificate, storage formats and each of the seven methods.</p></div>
+  <div class="card"><h3><a href="bootstrap.html">Bootstrap</a></h3><p>Hong and Li's test on certified brackets: the two input styles, the pieces, the defaults and the two applications.</p></div>
+  <div class="card"><h3><a href="replication.html">Replication</a></h3><p>Every paper table traced to its data, the command that reproduces it, the stored records and the CSV.</p></div>
+</div>
+
+<footer>
+  rum-testing-gpu · the code of the paper's algorithms and the data behind its tables. Source: <a href="https://github.com/mingxiz/rum-testing-gpu">https://github.com/mingxiz/rum-testing-gpu</a>.
+</footer>
+</main>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,53 @@
+{
+ "key": "n20_m13797",
+ "n": 20,
+ "cat": "m13797",
+ "mp": 5242865,
+ "density_pct": 49.99985694885254,
+ "cd_hash": "12ce42097084472a",
+ "gen_s": 2.982381199952215,
+ "solver": "bm_admm",
+ "criterion": "race",
+ "cap_s": 3600.0,
+ "hostname": "rtx5090-desktop",
+ "cpu_model": "AMD64 Family 26 Model 68 Stepping 0, AuthenticAMD",
+ "logical_cores": 32,
+ "python": "3.12.10",
+ "when": "2026-09-03 00:01:15",
+ "method": "bm_admm",
+ "ub": 135.67407663453704,
+ "lb": null,
+ "iters": 100,
+ "wall_s": 0.45117080002091825,
+ "build_s": 0.0,
+ "stop": "ub_target",
+ "beta": 85.81058978733839,
+ "alpha": 1.95,
+ "precond_p": 1.4142135623730951,
+ "mode": "hybrid",
+ "iters32": 100,
+ "iters64": 0,
+ "converged": true,
+ "trace": [
+  [
+   50,
+   0.14946630015037954,
+   134.089111328125,
+   137.62739335127768
+  ],
+  [
+   100,
+   0.2437033001333475,
+   135.49853515625,
+   135.67407663453704
+  ]
+ ],
+ "rel_to_opt": 0.005291803289536828,
+ "process_cpu_s": 0.546875,
+ "process_wall_s": 0.5584830997977406,
+ "avg_cores": 0.9792149488463581,
+ "peak_host_rss_mb": 1119.36328125,
+ "gpu": "NVIDIA GeForce RTX 5090",
+ "gpu_mem_total_gb": 31.84234619140625,
+ "gpu_pool_peak_gb": 1.1723694801330566
+}

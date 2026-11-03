@@ -1,0 +1,20 @@
+{
+  "key": "n25_sparse",
+  "method": "cgip",
+  "n": 25,
+  "mp": 600,
+  "opt": 2.806456232460135,
+  "UB": 2.83395439434165,
+  "LB": 2.703888670131683,
+  "gap_rel": 0.009798179484669902,
+  "gap_abs": 0.027498161881514882,
+  "stopped_by_rule": true,
+  "iters": 73,
+  "n_columns": 73,
+  "ip_calls": 72,
+  "build_s": 0.08241254789754748,
+  "solve_s": 199.0068432339467,
+  "cpu_s": 3349.675406525,
+  "threads": 24,
+  "host": "r912u28n01.grace.ycrc.yale.edu"
+}

@@ -1,0 +1,20 @@
+{
+  "key": "n32_sparse_lam10",
+  "method": "cgip_heur_rand_R10",
+  "n": 32,
+  "mp": 992,
+  "opt": 0.0,
+  "UB": 0.0,
+  "LB": 0.0,
+  "gap_rel": null,
+  "gap_abs": 0.0,
+  "stopped_by_rule": true,
+  "iters": 2,
+  "n_columns": 2,
+  "ip_calls": 0,
+  "build_s": 0.1443628491833806,
+  "solve_s": 0.3187023280188441,
+  "cpu_s": 0.15252855499999995,
+  "threads": 24,
+  "host": "r816u29n01.grace.ycrc.yale.edu"
+}

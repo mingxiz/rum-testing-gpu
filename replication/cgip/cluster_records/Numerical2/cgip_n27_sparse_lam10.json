@@ -1,0 +1,20 @@
+{
+  "key": "n27_sparse_lam10",
+  "method": "cgip",
+  "n": 27,
+  "mp": 702,
+  "opt": 0.0,
+  "UB": 0.0,
+  "LB": 0.0,
+  "gap_rel": null,
+  "gap_abs": 0.0,
+  "stopped_by_rule": true,
+  "iters": 2,
+  "n_columns": 2,
+  "ip_calls": 1,
+  "build_s": 0.08685859525576234,
+  "solve_s": 0.0389613239094615,
+  "cpu_s": 0.049665938999999604,
+  "threads": 24,
+  "host": "r815u29n03.grace.ycrc.yale.edu"
+}

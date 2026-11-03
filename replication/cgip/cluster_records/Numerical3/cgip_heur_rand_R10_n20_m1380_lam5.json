@@ -1,0 +1,20 @@
+{
+  "key": "n20_m1380_lam5",
+  "method": "cgip_heur_rand_R10",
+  "n": 20,
+  "mp": 524403,
+  "opt": 21.00538254043676,
+  "UB": 21.215431608256857,
+  "LB": 0.0,
+  "gap_rel": 0.009999773506420997,
+  "gap_abs": 0.2100490678200977,
+  "stopped_by_rule": true,
+  "iters": 839,
+  "n_columns": 839,
+  "ip_calls": 0,
+  "build_s": 61.17745763703715,
+  "solve_s": 12059.878206987982,
+  "cpu_s": 19738.309733852002,
+  "threads": 24,
+  "host": "r815u09n02.grace.ycrc.yale.edu"
+}

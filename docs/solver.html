@@ -1,0 +1,1242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RUM Distance Solvers</title>
+<meta name="description" content="How solver/ is organised: the RUM class, its seven methods, the shared certificate, the automatic choice and the storage formats.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --surface-2: #eaeef3;
+  --ink: #16202b;
+  --ink-2: #4a5667;
+  --ink-3: #737f8f;
+  --rule: #d6dce4;
+  --gpu: #1b5aad;
+  --gpu-soft: #e2ebf8;
+  --cpu: #1e7352;
+  --cpu-soft: #def0e7;
+  --old: #96580b;
+  --old-soft: #f8ecd8;
+  --link: #1b5aad;
+  --code-bg: #edf1f5;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0e1318;
+    --surface: #161c23;
+    --surface-2: #1d252e;
+    --ink: #e1e7ee;
+    --ink-2: #a2adba;
+    --ink-3: #7d8998;
+    --rule: #2b3541;
+    --gpu: #7cb0f3;
+    --gpu-soft: #172a42;
+    --cpu: #63c89d;
+    --cpu-soft: #132b20;
+    --old: #e5ab5a;
+    --old-soft: #302410;
+    --link: #7cb0f3;
+    --code-bg: #1c242d;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0e1318;
+  --surface: #161c23;
+  --surface-2: #1d252e;
+  --ink: #e1e7ee;
+  --ink-2: #a2adba;
+  --ink-3: #7d8998;
+  --rule: #2b3541;
+  --gpu: #7cb0f3;
+  --gpu-soft: #172a42;
+  --cpu: #63c89d;
+  --cpu-soft: #132b20;
+  --old: #e5ab5a;
+  --old-soft: #302410;
+  --link: #7cb0f3;
+  --code-bg: #1c242d;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: 16px; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.6 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+a { color: var(--link); text-underline-offset: 2px; }
+a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-radius: 3px; }
+code, pre { font-family: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace; }
+code { font-size: .88em; background: var(--code-bg); padding: .08em .32em; border-radius: 4px; }
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 0;
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.55;
+}
+pre code { background: none; padding: 0; font-size: inherit; }
+.cm { color: var(--ink-3); }
+h1, h2, h3, h4 {
+  font-family: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
+  line-height: 1.2;
+  margin: 0;
+  text-wrap: balance;
+}
+h1 { font-size: clamp(2rem, 4.2vw, 2.7rem); font-weight: 600; letter-spacing: -.01em; }
+h2 {
+  font-size: 1.55rem;
+  font-weight: 600;
+  margin: 56px 0 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
+}
+h2 .num { font-family: "IBM Plex Mono", monospace; font-size: .8em; color: var(--ink-3); font-weight: 500; margin-right: .35em; }
+h3 { font-size: 1.18rem; font-weight: 600; }
+h4 {
+  font-size: .76rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--ink-2);
+  margin: 18px 0 6px;
+}
+p, li { max-width: 72ch; }
+p { margin: 10px 0; }
+ul, ol { padding-left: 1.3em; }
+li { margin: 4px 0; }
+
+.wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+header.top { padding: 40px 0 4px; }
+.eyebrow { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--ink-2); letter-spacing: .02em; margin: 0 0 10px; }
+.lede { font-size: 1.1rem; color: var(--ink-2); max-width: 66ch; margin: 14px 0 0; }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; }
+nav.toc { font-size: 14px; }
+nav.toc h4 { margin-top: 0; }
+nav.toc ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 1px; }
+nav.toc li { margin: 0; }
+nav.toc a { display: block; padding: 4px 8px; border-radius: 4px; color: var(--ink-2); text-decoration: none; }
+nav.toc a:hover { background: var(--surface-2); color: var(--ink); }
+@media (min-width: 1100px) {
+  .layout { grid-template-columns: 200px minmax(0, 1fr); gap: 40px; }
+  nav.toc { position: sticky; top: 20px; align-self: start; max-height: calc(100vh - 40px); overflow: auto; padding-top: 6px; }
+}
+@media (max-width: 1099px) {
+  nav.toc { border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding: 10px 0; }
+  nav.toc ol { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+}
+main { min-width: 0; max-width: 880px; padding-bottom: 72px; }
+
+/* summary rows */
+.facts-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  margin: 22px 0 0;
+}
+.facts-row div { padding: 10px 14px 10px 0; }
+.facts-row dt { font-size: 11.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-2); }
+.facts-row dd { margin: 2px 0 0; font-weight: 500; }
+.status { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; margin: 22px 0 0; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 16px; }
+.card h3 { font-size: 1.05rem; margin: 10px 0 4px; }
+.card p { margin: 4px 0 0; font-size: 15px; }
+.pill { display: inline-block; font: 600 11.5px/1 "IBM Plex Mono", monospace; padding: 5px 8px; border-radius: 999px; letter-spacing: .02em; }
+.pill-ok { background: var(--cpu-soft); color: var(--cpu); }
+.pill-plan { background: var(--old-soft); color: var(--old); }
+
+/* figures */
+figure { margin: 22px 0; }
+.fig-frame { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 12px; overflow-x: auto; }
+svg.dia { display: block; width: 100%; min-width: 780px; height: auto; color: var(--ink); }
+figcaption { font-size: 14px; color: var(--ink-2); margin-top: 8px; max-width: 76ch; }
+.dia text { fill: var(--ink); font-family: "IBM Plex Sans", system-ui, sans-serif; font-size: 12.5px; }
+.dia .t-title { font-family: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif; font-weight: 600; font-size: 14.5px; }
+.dia .t-mono { font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace; font-size: 12px; }
+.dia .t-monob { font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace; font-size: 12.5px; font-weight: 600; }
+.dia .t-sm { font-size: 11.5px; fill: var(--ink-2); }
+.dia .t-xs { font-size: 10.5px; fill: var(--ink-2); }
+.dia .t-gpu { fill: var(--gpu); font-weight: 600; font-size: 12px; }
+.dia .t-cpu { fill: var(--cpu); font-weight: 600; font-size: 12px; }
+.dia .t-old { fill: var(--old); font-weight: 600; font-size: 12px; }
+.dia .box { fill: var(--surface); stroke: var(--rule); stroke-width: 1.2; }
+.dia .box-new { fill: var(--surface); stroke: var(--ink); stroke-width: 1.8; }
+.dia .box-gpu { fill: var(--gpu-soft); stroke: var(--gpu); stroke-width: 1.2; }
+.dia .box-cpu { fill: var(--cpu-soft); stroke: var(--cpu); stroke-width: 1.2; }
+.dia .box-old { fill: var(--old-soft); stroke: var(--old); stroke-width: 1.3; stroke-dasharray: 6 4; }
+.dia .box-tray { fill: var(--surface-2); stroke: var(--rule); stroke-width: 1; }
+.dia .chip { fill: var(--surface); stroke: var(--rule); stroke-width: 1; }
+.dia .arrow { stroke: var(--ink-2); stroke-width: 1.4; fill: none; }
+.dia .arrow-dash { stroke: var(--ink-2); stroke-width: 1.3; fill: none; stroke-dasharray: 5 4; }
+.dia .ah { fill: var(--ink-2); }
+.dia .tick { stroke: var(--ink-2); stroke-width: 1.4; }
+.dia .bar-32 { fill: var(--gpu); }
+.dia .bar-big { fill: var(--gpu-soft); stroke: var(--gpu); stroke-width: 1; stroke-dasharray: 3 2; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--ink-2); margin-top: 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 18px; height: 12px; border-radius: 3px; display: inline-block; }
+.sw-new { background: var(--surface); border: 1.8px solid var(--ink); }
+.sw-old { background: var(--old-soft); border: 1.4px dashed var(--old); }
+.sw-gpu { background: var(--gpu-soft); border: 1.2px solid var(--gpu); }
+.sw-cpu { background: var(--cpu-soft); border: 1.2px solid var(--cpu); }
+.sw-32 { background: var(--gpu); }
+.sw-big { background: var(--gpu-soft); border: 1px dashed var(--gpu); }
+
+/* tables */
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; font-variant-numeric: tabular-nums; }
+th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  border-bottom: 1.5px solid var(--ink-3);
+  padding: 6px 14px 6px 0;
+  white-space: nowrap;
+}
+td { border-bottom: 1px solid var(--rule); padding: 7px 14px 7px 0; vertical-align: top; }
+td.num, th.num { text-align: right; }
+td.nowrap { white-space: nowrap; }
+.fast { font-weight: 600; }
+.capped { color: var(--old); }
+tr.group td { padding-top: 14px; font-weight: 600; color: var(--ink-2); font-size: 12.5px; text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid var(--rule); }
+.flag { font-family: "IBM Plex Mono", monospace; font-weight: 600; white-space: nowrap; }
+
+/* method cards */
+.method { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 20px 22px; margin: 18px 0; }
+.method-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.method-head h3 code { font-size: 1.12em; background: none; padding: 0; }
+.tag { font: 500 11.5px/1 "IBM Plex Mono", monospace; padding: 5px 7px; border-radius: 4px; border: 1px solid var(--rule); color: var(--ink-2); white-space: nowrap; }
+.tag-gpu { background: var(--gpu-soft); color: var(--gpu); border-color: transparent; }
+.tag-cpu { background: var(--cpu-soft); color: var(--cpu); border-color: transparent; }
+.paper { margin-left: auto; font-size: 13px; color: var(--ink-2); }
+.method .lede-m { margin: 10px 0 4px; color: var(--ink-2); }
+dl.kv { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px 18px; margin: 14px 0 6px; }
+@media (min-width: 700px) { dl.kv { grid-template-columns: 124px minmax(0, 1fr); } }
+dl.kv dt { font-weight: 600; font-size: 13.5px; color: var(--ink-2); padding-top: 1px; }
+dl.kv dd { margin: 0 0 9px; max-width: 70ch; }
+.calls { display: grid; gap: 10px; margin-top: 8px; }
+.calls h4 { margin: 8px 0 4px; }
+.watch { margin: 14px 0 0; font-size: 15px; }
+.watch strong { color: var(--old); }
+
+.steps { counter-reset: step; list-style: none; padding: 0; }
+.steps > li { counter-increment: step; position: relative; padding-left: 2.2em; margin: 14px 0; max-width: none; }
+.steps > li::before {
+  content: counter(step);
+  position: absolute; left: 0; top: .05em;
+  font: 600 13px/1.6em "IBM Plex Mono", monospace;
+  width: 1.6em; height: 1.6em; text-align: center;
+  border-radius: 50%; background: var(--surface-2); color: var(--ink);
+}
+.steps > li > p { max-width: 70ch; }
+.note { color: var(--ink-2); font-size: 14.5px; }
+footer { border-top: 1px solid var(--rule); margin-top: 48px; padding-top: 14px; font-size: 13.5px; color: var(--ink-2); }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+/* the four pages share one header bar */
+nav.site { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 14px 0 12px; border-bottom: 1px solid var(--rule); font-size: 14px; }
+nav.site .brand { font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace; font-weight: 600; font-size: 13.5px; color: var(--ink); text-decoration: none; margin-right: 14px; }
+nav.site a.pg { color: var(--ink-2); text-decoration: none; padding: 4px 10px; border-radius: 4px; }
+nav.site a.pg:hover { background: var(--surface-2); color: var(--ink); }
+nav.site a.pg[aria-current="page"] { color: var(--ink); background: var(--surface); box-shadow: inset 0 0 0 1px var(--rule); font-weight: 500; }
+nav.site .gh { margin-left: auto; color: var(--ink-2); font-size: 13.5px; text-decoration: none; }
+nav.site .gh:hover { color: var(--link); text-decoration: underline; }
+nav.site + header.top { padding-top: 28px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="site" aria-label="Pages">
+  <a class="brand" href="index.html">rum-testing-gpu</a>
+  <a class="pg" href="index.html">Overview</a>
+  <a class="pg" href="solver.html" aria-current="page">Solvers</a>
+  <a class="pg" href="bootstrap.html">Bootstrap</a>
+  <a class="pg" href="replication.html">Replication</a>
+  <a class="gh" href="https://github.com/mingxiz/rum-testing-gpu">Source on GitHub</a>
+</nav>
+<header class="top">
+  <p class="eyebrow">rum-testing-gpu · solver/</p>
+  <h1>RUM Distance Solvers</h1>
+  <p class="lede">How far are observed choice probabilities p̂ from the random-utility polytope? The RUM class answers with a certified bracket lb ≤ dist ≤ ub from any of seven methods; given a known optimum, it runs the paper's timing race instead. This page maps how the pieces fit together, what each method does inside, and how to call it.</p>
+  <dl class="facts-row">
+    <div><dt>Entry point</dt><dd><code>solver.rum_solver.RUM</code></dd></div>
+    <div><dt>Methods</dt><dd>7: three GPU, four CPU + Gurobi</dd></div>
+    <div><dt>Default stop</dt><dd>abs 1e-5 or rel 1e-4, max 1 h</dd></div>
+    <div><dt>Automatic choice</dt><dd>bm_admm or flow_cg</dd></div>
+  </dl>
+</header>
+
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+  <h4>Contents</h4>
+  <ol>
+    <li><a href="#overview">1 · The big picture</a></li>
+    <li><a href="#call">2 · One call, step by step</a></li>
+    <li><a href="#interfaces">3 · Interfaces</a></li>
+    <li><a href="#auto">4 · Automatic choice</a></li>
+    <li><a href="#certificate">5 · The certificate</a></li>
+    <li><a href="#storage">6 · Storage formats</a></li>
+    <li><a href="#methods">7 · The seven methods</a></li>
+    <li><a href="#common">8 · Shared building blocks</a></li>
+    <li><a href="#legacy">9 · The race path</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<!-- ============================================================ 1 -->
+<h2 id="overview"><span class="num">1</span>The big picture</h2>
+<p>There are two ways into the engines, one per job. The <strong>RUM class</strong> certifies a distance: it checks the data, picks or checks the method, plans GPU memory, enforces <code>max_time</code>, and always returns a certified bracket. Your code and the paper's certificate drivers both go through it. <strong><code>solver.solve()</code></strong> runs the paper's timing race: one named method, until its upper bound is within 1 % of a known optimum. The class runs that same race when given <code>opt</code> (<a href="#legacy">§9</a>). Both reach the same seven engine functions, and the engines share one set of building blocks in <code>solver/common</code>.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="dia" viewBox="0 0 880 630" role="img" aria-label="Two entry points, one set of engines. Your code and the paper's certificate drivers call the RUM class; the paper's timing races call solver.solve. Both reach the same seven engine functions, three on the GPU and four on CPU with Gurobi, which share solver/common.">
+    <defs>
+      <marker id="ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path class="ah" d="M0,0 L10,5 L0,10 z"/>
+      </marker>
+    </defs>
+    <!-- callers -->
+    <rect class="box" x="16" y="8" width="196" height="50" rx="6"/>
+    <text class="t-title" x="114" y="29" text-anchor="middle">Your analysis</text>
+    <text class="t-sm" x="114" y="47" text-anchor="middle">bootstrap loops, scripts</text>
+    <rect class="box" x="228" y="8" width="196" height="50" rx="6"/>
+    <text class="t-title" x="326" y="29" text-anchor="middle">Paper certificates</text>
+    <text class="t-sm" x="326" y="47" text-anchor="middle">feas_one · run_one (cert)</text>
+    <rect class="box" x="456" y="8" width="408" height="50" rx="6"/>
+    <text class="t-title" x="660" y="29" text-anchor="middle">Paper timing races</text>
+    <text class="t-sm" x="660" y="47" text-anchor="middle">run_one, feas_one --criterion race</text>
+    <line class="arrow" x1="114" y1="58" x2="114" y2="93" marker-end="url(#ah1)"/>
+    <text class="t-mono" x="122" y="80">calculate_distance(…)</text>
+    <line class="arrow" x1="326" y1="58" x2="326" y2="93" marker-end="url(#ah1)"/>
+    <text class="t-mono" x="334" y="80">certify(…)</text>
+    <line class="arrow" x1="660" y1="58" x2="660" y2="93" marker-end="url(#ah1)"/>
+    <text class="t-mono" x="670" y="80">solver.solve(…, opt_ref)</text>
+
+    <!-- RUM class -->
+    <rect class="box-new" x="16" y="96" width="408" height="150" rx="8"/>
+    <text class="t-title" x="34" y="122">rum_solver.py — the RUM class</text>
+    <text class="t-sm" x="34" y="142">checks the input · picks and plans the method</text>
+    <text class="t-sm" x="34" y="159">enforces max_time · returns a certified bracket</text>
+    <rect class="chip" x="34" y="176" width="178" height="52" rx="5"/>
+    <text class="t-mono" x="123" y="198" text-anchor="middle">defaults.py</text>
+    <text class="t-xs" x="123" y="216" text-anchor="middle">tolerances · arguments · rule</text>
+    <rect class="chip" x="226" y="176" width="178" height="52" rx="5"/>
+    <text class="t-mono" x="315" y="198" text-anchor="middle">machine.py</text>
+    <text class="t-xs" x="315" y="216" text-anchor="middle">GPU · Gurobi · RAM profile</text>
+
+    <!-- old path -->
+    <rect class="box-old" x="456" y="96" width="408" height="150" rx="8"/>
+    <text class="t-title" x="474" y="122">solver.solve() — the paper's race</text>
+    <text class="t-sm" x="474" y="142">race to 1 % of a known OPT; certificates go to the class</text>
+    <text class="t-mono" x="474" y="166">__init__.py · params.py · rum.py (older class)</text>
+    <text class="t-xs" x="474" y="192">engine wrappers</text>
+    <text class="t-mono" x="474" y="210">solve_bm_admm · solve_cgbfqp</text>
+    <text class="t-mono" x="474" y="228">solve_flow_admm · solve_cgip_paper</text>
+
+    <line class="arrow" x1="220" y1="246" x2="220" y2="287" marker-end="url(#ah1)"/>
+    <text class="t-sm" x="230" y="272">engine call + bound hooks</text>
+    <line class="arrow" x1="660" y1="246" x2="660" y2="287" marker-end="url(#ah1)"/>
+    <text class="t-sm" x="670" y="272">through the wrappers</text>
+
+    <!-- engines -->
+    <rect class="box-tray" x="16" y="290" width="848" height="214" rx="8"/>
+    <text class="t-title" x="34" y="314">Engines — one function per method</text>
+    <text class="t-gpu" x="34" y="340">GPU · CuPy · plain L2 norm</text>
+    <text class="t-cpu" x="452" y="340">CPU · Gurobi · any weight matrix</text>
+
+    <rect class="box-gpu" x="34" y="350" width="400" height="30" rx="5"/>
+    <text class="t-monob" x="46" y="370">bm_admm</text>
+    <text class="t-mono" x="146" y="370">solve_kadmm_v2</text>
+    <text class="t-xs" x="422" y="370" text-anchor="end">bm_admm/solver.py</text>
+    <rect class="box-gpu" x="34" y="388" width="400" height="30" rx="5"/>
+    <text class="t-monob" x="46" y="408">flow_cg</text>
+    <text class="t-mono" x="146" y="408">solve_cgbfqp</text>
+    <text class="t-xs" x="422" y="408" text-anchor="end">flow_cg/__init__.py</text>
+    <rect class="box-gpu" x="34" y="426" width="400" height="30" rx="5"/>
+    <text class="t-monob" x="46" y="446">flow_admm</text>
+    <text class="t-mono" x="146" y="446">solve_arcflow_fast</text>
+    <text class="t-xs" x="422" y="446" text-anchor="end">flow_admm/solver.py</text>
+
+    <rect class="box-cpu" x="452" y="350" width="396" height="30" rx="5"/>
+    <text class="t-monob" x="464" y="370">ip_cg</text>
+    <text class="t-mono" x="560" y="370">solve_cgip</text>
+    <text class="t-xs" x="836" y="370" text-anchor="end">ip_cg/cgip.py</text>
+    <rect class="box-cpu" x="452" y="388" width="396" height="30" rx="5"/>
+    <text class="t-monob" x="464" y="408">ip_cg_heur</text>
+    <text class="t-mono" x="560" y="408">solve_cgipheuristic_rand</text>
+    <text class="t-xs" x="836" y="408" text-anchor="end">ip_cg/cgip.py</text>
+    <rect class="box-cpu" x="452" y="426" width="396" height="30" rx="5"/>
+    <text class="t-monob" x="464" y="446">bm_qp</text>
+    <text class="t-mono" x="560" y="446">solve_BM_qp</text>
+    <text class="t-xs" x="836" y="446" text-anchor="end">exact_qp/flow_bm_qp.py</text>
+    <rect class="box-cpu" x="452" y="464" width="396" height="30" rx="5"/>
+    <text class="t-monob" x="464" y="484">flow_qp</text>
+    <text class="t-mono" x="560" y="484">solve_arc_flow_qp</text>
+    <text class="t-xs" x="836" y="484" text-anchor="end">exact_qp/flow_bm_qp.py</text>
+
+    <line class="arrow" x1="440" y1="504" x2="440" y2="537" marker-end="url(#ah1)"/>
+    <text class="t-sm" x="450" y="525">feasibility push · Frank–Wolfe bound · master QP · Gurobi env</text>
+
+    <!-- common -->
+    <rect class="box-tray" x="16" y="540" width="848" height="78" rx="8"/>
+    <text class="t-title" x="34" y="562">solver/common — shared pieces</text>
+    <rect class="chip" x="34" y="572" width="106" height="38" rx="5"/>
+    <text class="t-mono" x="87" y="588" text-anchor="middle">push_to_ub64</text>
+    <text class="t-xs" x="87" y="603" text-anchor="middle">transforms.py</text>
+    <rect class="chip" x="150" y="572" width="120" height="38" rx="5"/>
+    <text class="t-mono" x="210" y="588" text-anchor="middle">fw_lb_rows_gpu</text>
+    <text class="t-xs" x="210" y="603" text-anchor="middle">transforms.py</text>
+    <rect class="chip" x="280" y="572" width="168" height="38" rx="5"/>
+    <text class="t-mono" x="364" y="588" text-anchor="middle">make_r_feasible_gpu64</text>
+    <text class="t-xs" x="364" y="603" text-anchor="middle">arcflow_kernels.py</text>
+    <rect class="chip" x="458" y="572" width="124" height="38" rx="5"/>
+    <text class="t-mono" x="520" y="588" text-anchor="middle">solve_qp_native</text>
+    <text class="t-xs" x="520" y="603" text-anchor="middle">qp_native.py</text>
+    <rect class="chip" x="592" y="572" width="85" height="38" rx="5"/>
+    <text class="t-mono" x="634.5" y="588" text-anchor="middle">solve_rmp</text>
+    <text class="t-xs" x="634.5" y="603" text-anchor="middle">solve_qp.py</text>
+    <rect class="chip" x="687" y="572" width="89" height="38" rx="5"/>
+    <text class="t-mono" x="731.5" y="588" text-anchor="middle">_ENV</text>
+    <text class="t-xs" x="731.5" y="603" text-anchor="middle">gurobi_env.py</text>
+  </svg>
+  </div>
+  <figcaption>Two entry points, one set of engines. Every certificate goes through the RUM class (solid outline): yours, and the paper's certificate drivers through <code>run_one.certify</code>. The paper's timing races go through <code>solver.solve()</code> (dashed). Both reach the same engine functions, and those share <code>solver/common</code>.</figcaption>
+  <div class="legend" aria-hidden="true">
+    <span><i class="sw sw-new"></i>RUM class</span>
+    <span><i class="sw sw-old"></i>race path (paper timing)</span>
+    <span><i class="sw sw-gpu"></i>GPU engine</span>
+    <span><i class="sw sw-cpu"></i>CPU + Gurobi engine</span>
+  </div>
+</figure>
+
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Layer</th><th>Files</th><th>What it owns</th></tr></thead>
+  <tbody>
+    <tr><td class="nowrap">RUM class</td><td><code>rum_solver.py</code></td><td>input checks, method choice, memory plan, one runner per method, <code>Result</code></td></tr>
+    <tr><td class="nowrap">Settings</td><td><code>defaults.py</code></td><td>tolerances, <code>max_time</code>, seed, the arguments of each method, the automatic-choice thresholds</td></tr>
+    <tr><td class="nowrap">Machine</td><td><code>machine.py</code></td><td>GPU, Gurobi and RAM detection; the saved profile <code>~/.rum/machine.json</code></td></tr>
+    <tr><td class="nowrap">Engines</td><td><code>bm_admm/ flow_cg/ flow_admm/ ip_cg/ exact_qp/</code></td><td>the algorithms</td></tr>
+    <tr><td class="nowrap">Shared</td><td><code>common/</code></td><td>the push to a feasible point (upper bound), the Frank–Wolfe bound (lower bound), lattice transforms, the master QP, the Gurobi environment</td></tr>
+    <tr><td class="nowrap">Race path</td><td><code>__init__.py rum.py params.py</code></td><td>the paper's timing race <code>solve()</code>; the older class (IP-CG and the exact QPs), which IP-CG's race uses; the paper's constants</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============================================================ 2 -->
+<h2 id="call"><span class="num">2</span>One call, step by step</h2>
+<pre><code>from solver.rum_solver import RUM
+
+rum = RUM(menu, alternative, choice_probability)   <span class="cm"># one row per observed (menu, alternative)</span>
+rum = RUM.from_rows(cd, n)                         <span class="cm"># the same from an (M, 3) array of rows</span>
+res = rum.calculate_distance()                     <span class="cm"># automatic method, abs 1e-5 / rel 1e-4, 1 h</span>
+res = rum.calculate_distance(method="bm_admm", rel_tol=1e-3,
+                             method_args={"check": 100}, max_time=600)
+res.exit_flag, res.distance, res.lb, res.ub, res.p_fit
+print(res)                                         <span class="cm"># every field, one per line</span>
+res.to_dict()                                      <span class="cm"># the fields as plain values, for json.dump</span></code></pre>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="dia" viewBox="0 0 880 232" role="img" aria-label="The RUM constructor runs once per data set. Each calculate_distance call then plans, runs and reports. One clock covers the whole call, setup included.">
+    <defs>
+      <marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path class="ah" d="M0,0 L10,5 L0,10 z"/>
+      </marker>
+    </defs>
+    <text class="t-sm" x="106" y="22" text-anchor="middle">once per data set</text>
+    <text class="t-sm" x="546" y="20" text-anchor="middle">each calculate_distance(…) call</text>
+    <path class="tick" d="M236,36 L236,28 L856,28 L856,36" fill="none"/>
+
+    <rect class="box" x="16" y="44" width="180" height="96" rx="6"/>
+    <text class="t-monob" x="28" y="68">RUM(menu, alt, p)</text>
+    <text class="t-sm" x="28" y="90">validates every row</text>
+    <text class="t-sm" x="28" y="108">takes out singletons</text>
+    <text class="t-sm" x="28" y="126">keeps geometry + caches</text>
+
+    <rect class="box-new" x="236" y="44" width="180" height="96" rx="6"/>
+    <text class="t-title" x="248" y="68">Plan</text>
+    <text class="t-mono" x="248" y="90">_PLAN[method]</text>
+    <text class="t-sm" x="248" y="108">named or automatic</text>
+    <text class="t-sm" x="248" y="126">checks machine + memory</text>
+
+    <rect class="box-new" x="456" y="44" width="180" height="96" rx="6"/>
+    <text class="t-title" x="468" y="68">Run</text>
+    <text class="t-mono" x="468" y="90">_RUN[method](task)</text>
+    <text class="t-sm" x="468" y="108">engine + bound hooks</text>
+    <text class="t-sm" x="468" y="126">fills lb, ub, p_fit</text>
+
+    <rect class="box-new" x="676" y="44" width="180" height="96" rx="6"/>
+    <text class="t-title" x="688" y="68">Result</text>
+    <text class="t-mono" x="688" y="90">exit_flag, lb, ub, …</text>
+    <text class="t-sm" x="688" y="108">adds singleton constant</text>
+    <text class="t-sm" x="688" y="126">p_fit in input order</text>
+
+    <line class="arrow" x1="196" y1="92" x2="233" y2="92" marker-end="url(#ah2)"/>
+    <line class="arrow" x1="416" y1="92" x2="453" y2="92" marker-end="url(#ah2)"/>
+    <line class="arrow" x1="636" y1="92" x2="673" y2="92" marker-end="url(#ah2)"/>
+
+    <text class="t-sm" x="326" y="162" text-anchor="middle">cannot run here → raises</text>
+    <text class="t-sm" x="546" y="162" text-anchor="middle">Ctrl-C · OOM · error → best bracket kept</text>
+
+    <text class="t-sm" x="546" y="190" text-anchor="middle">max_time: one clock from the call; setup counts (Gurobi model, Mhat, kernel compile)</text>
+    <line class="tick" x1="236" y1="200" x2="856" y2="200"/>
+    <line class="tick" x1="236" y1="194" x2="236" y2="206"/>
+    <line class="tick" x1="856" y1="194" x2="856" y2="206"/>
+    <text class="t-sm" x="856" y="222" text-anchor="end">deadline → exit 0 with the best bracket</text>
+  </svg>
+  </div>
+  <figcaption>The constructor runs once per data set. Each call then plans, runs and reports. Because the runner records the bracket as it goes, a time limit, Ctrl-C, out-of-memory or an engine error still returns the best bracket found.</figcaption>
+</figure>
+
+<ul>
+  <li><strong>Singleton menus</strong> are taken out before solving (their probability must be 1) and added back as a constant c: lb = √(lb′² + c), ub = √(ub′² + c).</li>
+  <li><strong>The geometry</strong> (menus and alternatives) is built once per RUM object and holds the caches: the Gurobi models of bm_qp, flow_qp and IP-CG, and Flow-ADMM's Mhat. A bootstrap loop passes <code>p=</code> per draw and reuses them.</li>
+  <li><strong><code>max_time</code> starts at the call.</strong> Setup counts: model builds, Mhat, kernel compilation. This matters mostly for the exact QPs and Flow-ADMM.</li>
+</ul>
+
+<!-- ============================================================ 3 -->
+<h2 id="interfaces"><span class="num">3</span>Interfaces</h2>
+
+<h3>Input: <code>RUM(menu, alternative, choice_probability, num_alternatives=None)</code></h3>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Argument</th><th>Meaning</th><th>Checked</th></tr></thead>
+  <tbody>
+    <tr><td><code>menu</code></td><td>integer bitmask per row; bit a set = alternative a offered</td><td>non-empty; at most 62 alternatives (GPU methods: 32)</td></tr>
+    <tr><td><code>alternative</code></td><td>the chosen alternative, 0-based</td><td>inside its menu; no repeated (menu, alternative)</td></tr>
+    <tr><td><code>choice_probability</code></td><td>its observed probability</td><td>finite and in [0, 1]; a warning if a menu sums above 1</td></tr>
+    <tr><td><code>num_alternatives</code></td><td>n; default = the highest alternative used + 1</td><td>at least what the data use</td></tr>
+  </tbody>
+</table>
+</div>
+<p>A menu does not need a row for every member: partly observed menus are fine. <code>RUM.from_rows(cd, n)</code> builds the same object from an (M, 3) array of rows (menu, alternative, probability), the layout of the <code>data/</code> instances and of the engines.</p>
+
+<h3><code>calculate_distance(...)</code></h3>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Argument</th><th>Default</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>abs_tol</code></td><td class="nowrap">1e-5</td><td>stop when ub − lb ≤ abs_tol …</td></tr>
+    <tr><td><code>rel_tol</code></td><td class="nowrap">1e-4</td><td>… or when (ub − lb)/lb ≤ rel_tol (needs lb &gt; 0)</td></tr>
+    <tr><td><code>method</code></td><td>None</td><td>None = automatic choice (<a href="#auto">§4</a>); or one of the seven names (old names work: cgbfqp, cgip, …)</td></tr>
+    <tr><td><code>method_args</code></td><td>None</td><td>a dict of that method's settings (<a href="#methods">§7</a>); an unknown name is an error; needs a named method</td></tr>
+    <tr><td><code>max_time</code></td><td class="nowrap">3600 s</td><td>hard stop, setup included</td></tr>
+    <tr><td><code>p</code></td><td>stored</td><td>probabilities to use instead of the stored ones, e.g. a bootstrap draw</td></tr>
+    <tr><td><code>vcov</code></td><td>None</td><td>(M, M) weight matrix of the norm, dense or sparse; only the Gurobi methods take it</td></tr>
+    <tr><td><code>seed</code></td><td>0</td><td>seed of the random first columns; None draws one and reports it</td></tr>
+    <tr><td><code>verbose</code></td><td>False</td><td>the engine's progress lines</td></tr>
+    <tr><td><code>machine</code></td><td>saved profile</td><td>a profile from <code>solver.machine.detect()</code></td></tr>
+    <tr class="group"><td colspan="3">Race mode: give <code>opt</code></td></tr>
+    <tr><td><code>opt</code></td><td>None</td><td>a known optimum (<code>data/opt_refs.json</code>). The call becomes the paper's race: no lower bound, and <code>abs_tol</code> or <code>rel_tol</code> raise</td></tr>
+    <tr><td><code>opt_rel_tol</code></td><td class="nowrap">1e-2</td><td>race target: stop at ub ≤ max((1 + opt_rel_tol)·opt, opt_floor)</td></tr>
+    <tr><td><code>opt_floor</code></td><td class="nowrap">0</td><td>absolute floor of that target; needed when opt = 0 (the paper: 1e-3 in the λ study, 1e-5 on the convex path)</td></tr>
+  </tbody>
+</table>
+</div>
+<p>In race mode, <code>method</code> is bm_admm, flow_cg or flow_admm (None picks one by <a href="#auto">§4</a>), and <code>method_args</code> takes the race's own keywords (<code>_RACE_ARGS</code>). The call passes <code>solver.solve()</code> what <code>validation/run_one.py</code> passes: seed, mask pricing where it fits, BM-ADMM's push armed from the first check when the floor binds, kernels compiled before the clock. On 11 paper cells it gave the same iterations and ub as <code>solver.solve()</code>, bit for bit (<a href="#legacy">§9</a>).</p>
+
+<h3>Output: <code>Result</code></h3>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Field</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr class="group"><td colspan="2">The answer</td></tr>
+    <tr><td><code>exit_flag</code>, <code>status</code>, <code>message</code></td><td>why it stopped (table below); <code>message</code> explains anything other than success</td></tr>
+    <tr><td><code>distance</code></td><td>= ub, the distance of <code>p_fit</code></td></tr>
+    <tr><td><code>lb</code>, <code>ub</code></td><td>the certified bracket: lb ≤ dist ≤ ub, whatever the exit_flag</td></tr>
+    <tr><td><code>abs_gap</code>, <code>rel_gap</code>, <code>met_abs</code>, <code>met_rel</code></td><td>ub − lb, (ub − lb)/lb, and whether each tolerance holds</td></tr>
+    <tr class="group"><td colspan="2">The run</td></tr>
+    <tr><td><code>method</code>, <code>auto_reason</code></td><td>the method used and, when chosen automatically, the reasoning</td></tr>
+    <tr><td><code>method_args</code></td><td>the settings actually used, with "auto" values resolved (dtype, pricing, beta, …)</td></tr>
+    <tr><td><code>iterations</code>, <code>iteration_unit</code></td><td>ADMM iterations, columns or QP solves</td></tr>
+    <tr><td><code>time</code>, <code>time_setup</code>, <code>time_solve</code></td><td>seconds; time = setup + solve</td></tr>
+    <tr><td><code>seed</code>, <code>machine</code></td><td>the seed used; one line about the GPU, cores and Gurobi</td></tr>
+    <tr class="group"><td colspan="2">Detail</td></tr>
+    <tr><td><code>p_fit</code></td><td>the fitted RUM probabilities, input row order (singleton rows = 1)</td></tr>
+    <tr><td><code>trace</code></td><td>rows (iteration, seconds since the call, ub, lb), one per check or column; the last row is the final bracket</td></tr>
+    <tr><td><code>info</code></td><td>method-specific: GPU bytes planned, ms per iteration, pricing backend, master KKT, …; for the GPU methods also <code>lb_dtype</code>, <code>lb_layout</code> and <code>lb_rigorous</code>, the form the lower bound came from (<a href="#storage">§6</a>)</td></tr>
+    <tr class="group"><td colspan="2">Race mode only</td></tr>
+    <tr><td><code>mode</code></td><td>"certificate", or "race" when opt was given; in a race <code>lb</code>, the gaps and the tolerances are NaN and <code>p_fit</code> is None</td></tr>
+    <tr><td><code>opt</code>, <code>target</code></td><td>the optimum given and the stop target</td></tr>
+    <tr><td><code>abs_to_opt</code>, <code>rel_to_opt</code></td><td>ub − opt and (ub − opt)/opt; <code>time_solve</code> is the race time the tables report</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3><code>exit_flag</code></h3>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th class="num">Flag</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td class="num flag">4</td><td>race mode: the opt target was reached</td></tr>
+    <tr><td class="num flag">3</td><td>abs_tol and rel_tol both met</td></tr>
+    <tr><td class="num flag">1</td><td>abs_tol met</td></tr>
+    <tr><td class="num flag">2</td><td>rel_tol met</td></tr>
+    <tr><td class="num flag">0</td><td>max_time reached</td></tr>
+    <tr><td class="num flag">−1</td><td>the method's iteration limit (see its method_args)</td></tr>
+    <tr><td class="num flag">−2</td><td>stalled: the method stopped without meeting the tolerances; the message says why</td></tr>
+    <tr><td class="num flag">−3</td><td>out of memory</td></tr>
+    <tr><td class="num flag">−4</td><td>interrupted (Ctrl-C)</td></tr>
+    <tr><td class="num flag">−5</td><td>solver error; the message holds the exception</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Problems found before solving raise instead of returning a flag: bad input, a named method that cannot run on this machine, an unknown <code>method_args</code> name.</p>
+
+<h3>Settings: <code>defaults.py</code></h3>
+<p><code>ABS_TOL</code>, <code>REL_TOL</code>, <code>MAX_TIME</code>, <code>SEED</code>, <code>METHOD_ARGS[method]</code> (the full list per method is in <a href="#methods">§7</a>) and <code>AUTO</code> (the automatic-choice thresholds and the share of free GPU memory a method may plan for, 0.9). Edit the file to change a default for every call. Pass the argument to change it for one call.</p>
+
+<h3>Machine: <code>machine.py</code></h3>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Function</th><th>What it does</th></tr></thead>
+  <tbody>
+    <tr><td><code>setup(use_gpu=None, use_gurobi=None, self_test=False)</code></td><td>detect, apply overrides, optionally solve a tiny instance with each method, save <code>~/.rum/machine.json</code>; run once after install</td></tr>
+    <tr><td><code>load()</code></td><td>the saved profile, or a one-off detection when there is none</td></tr>
+    <tr><td><code>detect()</code></td><td>the profile now, via nvidia-smi and the CuPy version (creates no CUDA context)</td></tr>
+    <tr><td><code>can_use_gpu(prof)</code>, <code>can_use_gurobi(prof)</code></td><td>what the planner asks before choosing a method</td></tr>
+    <tr><td><code>gpu_free_bytes()</code></td><td>free device memory, read just before a GPU method is planned</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="note">GPU support: NVIDIA through CuPy. CUDA 13 needs compute capability ≥ 7.5, and RTX 50xx needs CUDA ≥ 12.8. Tested on an RTX 5090 (32 GB) and on a 141 GB data-center card. Memory sets the largest n.</p>
+
+<h3>Inside the class: what each method plugs into</h3>
+<p>Adding a method takes four things: an entry in <code>defaults.METHOD_ARGS</code>, a plan function, a run function, and the name in <code>METHODS</code>, <code>_UNIT</code>, <code>_PLAN</code> and <code>_RUN</code>.</p>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Contract</th><th>Shape</th><th>Job</th></tr></thead>
+  <tbody>
+    <tr><td>plan</td><td><code>_PLAN[m](n, mp, weighted, prof, args) → args</code></td><td>checks the machine and the arguments; estimates memory against 90 % of free GPU memory; resolves "auto" settings and stores <code>_gpu_bytes</code>. Raises <code>RuntimeError</code> (cannot run here) or <code>ValueError</code> (bad argument), before anything is solved.</td></tr>
+    <tr><td>run</td><td><code>_RUN[m](task) → "tol" | "time" | "iters" | "stalled"</code></td><td>runs the engine and fills <code>task.state</code> as it goes</td></tr>
+    <tr><td>task</td><td><code>geom, p, W, args, abs_tol, rel_tol, deadline, seed, verbose, t0, state, const, ram</code></td><td>what a runner may read; <code>p</code> and <code>W</code> cover the non-singleton rows</td></tr>
+    <tr><td>state</td><td><code>lb, ub, p_fit, iterations, trace, info, setup, message</code></td><td>what a runner writes; <code>_result</code> turns it into the <code>Result</code></td></tr>
+    <tr><td class="nowrap">engine hooks</td><td><code>push_fn(x) → ub</code>, <code>lb_fn(x) → lb</code>, <code>gap_abs_tol</code>, <code>gap_rel_tol</code></td><td>bm_admm and flow_admm: the engine calls the hooks at every check and stops itself on the gap; a hook past the deadline raises <code>_TimeUp</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============================================================ 4 -->
+<h2 id="auto"><span class="num">4</span>Automatic choice</h2>
+<p><code>method=None</code> calls <code>choose_method(n, mp, weighted, profile)</code>. With a GPU it picks bm_admm or flow_cg, from n and the density (observed (menu, alternative) cells ÷ n·2<sup>n−1</sup>). Memory is the only thing that overrides the density rule. The thresholds live in <code>defaults.AUTO["bm_admm_min_density"] = {11: 0.02, 14: 0.01, 18: 0.005}</code>.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="dia" viewBox="0 0 880 400" role="img" aria-label="Decision path of the automatic choice. A weight matrix or no usable GPU leads to a Gurobi method. Otherwise bm_admm is chosen when n is at least 11, the density reaches d of n and it fits in GPU memory, and flow_cg otherwise.">
+    <defs>
+      <marker id="ah3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path class="ah" d="M0,0 L10,5 L0,10 z"/>
+      </marker>
+    </defs>
+    <rect class="box" x="40" y="16" width="360" height="48" rx="6"/>
+    <text x="220" y="45" text-anchor="middle">Weighted norm (vcov given)?</text>
+    <rect class="box" x="40" y="96" width="360" height="48" rx="6"/>
+    <text x="220" y="125" text-anchor="middle">A usable GPU in the machine profile?</text>
+    <rect class="box" x="40" y="176" width="360" height="60" rx="6"/>
+    <text x="220" y="200" text-anchor="middle">n ≥ 11 and density ≥ d(n)?</text>
+    <text class="t-sm" x="220" y="222" text-anchor="middle">d = 2 % at n = 11–13 · 1 % at 14–17 · 0.5 % from 18</text>
+    <rect class="box" x="40" y="268" width="360" height="48" rx="6"/>
+    <text x="220" y="297" text-anchor="middle">bm_admm fits 90 % of the free GPU memory?</text>
+    <rect class="box-gpu" x="40" y="348" width="360" height="40" rx="6"/>
+    <text class="t-monob" x="220" y="373" text-anchor="middle">bm_admm</text>
+
+    <line class="arrow" x1="220" y1="64" x2="220" y2="93" marker-end="url(#ah3)"/>
+    <text class="t-sm" x="230" y="84">no</text>
+    <line class="arrow" x1="220" y1="144" x2="220" y2="173" marker-end="url(#ah3)"/>
+    <text class="t-sm" x="230" y="164">yes</text>
+    <line class="arrow" x1="220" y1="236" x2="220" y2="265" marker-end="url(#ah3)"/>
+    <text class="t-sm" x="230" y="256">yes</text>
+    <line class="arrow" x1="220" y1="316" x2="220" y2="345" marker-end="url(#ah3)"/>
+    <text class="t-sm" x="230" y="336">yes</text>
+
+    <line class="arrow" x1="400" y1="40" x2="497" y2="40" marker-end="url(#ah3)"/>
+    <text class="t-sm" x="449" y="33" text-anchor="middle">yes</text>
+    <line class="arrow" x1="400" y1="120" x2="497" y2="120" marker-end="url(#ah3)"/>
+    <text class="t-sm" x="449" y="113" text-anchor="middle">no</text>
+    <line class="arrow" x1="400" y1="206" x2="497" y2="206" marker-end="url(#ah3)"/>
+    <text class="t-sm" x="449" y="199" text-anchor="middle">no</text>
+    <line class="arrow" x1="400" y1="292" x2="497" y2="292" marker-end="url(#ah3)"/>
+    <text class="t-sm" x="449" y="285" text-anchor="middle">no</text>
+
+    <rect class="box-cpu" x="500" y="16" width="340" height="128" rx="6"/>
+    <text class="t-title" x="518" y="42">A Gurobi method (CPU)</text>
+    <text x="518" y="66">flow_qp up to n = 10</text>
+    <text x="518" y="86">ip_cg_heur above</text>
+    <text class="t-sm" x="518" y="112">takes any weight matrix</text>
+
+    <rect class="box-gpu" x="500" y="176" width="340" height="140" rx="6"/>
+    <text class="t-monob" x="518" y="202">flow_cg</text>
+    <text x="518" y="226">column generation, GPU pricing</text>
+    <text class="t-sm" x="518" y="248">GPU memory grows like 2^n, so it fits</text>
+    <text class="t-sm" x="518" y="266">well past bm_admm (n = 32: 22 GB)</text>
+
+    <line class="arrow-dash" x1="670" y1="176" x2="670" y2="147" marker-end="url(#ah3)"/>
+    <text class="t-sm" x="680" y="166">does not fit either</text>
+  </svg>
+  </div>
+  <figcaption>How <code>choose_method</code> decides. With a GPU and no weight matrix, the answer is bm_admm or flow_cg. A CPU method is used only when no GPU method can run.</figcaption>
+</figure>
+
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>n</th><th>bm_admm from density</th><th>Evidence</th></tr></thead>
+  <tbody>
+    <tr><td class="nowrap">10 and below</td><td>never</td><td>flow_cg is at most 0.55 s slower on any design (n = 10, every menu: 0.66 s vs 0.11 s), while bm_admm needs up to 362,850 iterations on pairwise designs (n = 10: 18.9 s vs 0.02 s)</td></tr>
+    <tr><td class="nowrap">11–13</td><td>2 %</td><td>flow_cg is faster below ~2 % and bm_admm from ~2 %, by up to 200× (n = 13, every menu: 0.16 s vs 32.5 s); the n = 6–13 table below</td></tr>
+    <tr><td class="nowrap">14–17</td><td>1 %</td><td>flow_cg was faster at ~0.5 % and bm_admm at ~2 % at every n (the n = 13–17 table below)</td></tr>
+    <tr><td class="nowrap">18 and up</td><td>0.5 %</td><td>the paper's n = 18–20 grid: crossover 0.3–0.5 % at every n</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Memory, on the 32 GB RTX 5090: bm_admm in float64 fits up to n = 23 (13.9 GB at n = 23, 29.1 GB at n = 24). From n = 24 the automatic choice is therefore flow_cg. flow_admm, ip_cg and flow_qp are never chosen automatically.</p>
+
+<h3>The n = 13–17 measurement</h3>
+<p class="note">RTX 5090, default tolerances (abs 1e-5, rel 1e-4), 60 s cap per run. Seconds, with ADMM iterations or columns in parentheses. The faster method is in bold. The last column is what the rule picks; it is the faster one in all 20 rows.</p>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th class="num">n</th><th>Design</th><th class="num">Density</th><th class="num">Rows</th><th class="num">bm_admm</th><th class="num">flow_cg</th><th>Picks</th></tr></thead>
+  <tbody>
+    <tr><td class="num">13</td><td>pairwise</td><td class="num">0.29 %</td><td class="num">156</td><td class="num">15.5 (190,550)</td><td class="num fast">0.05 (66)</td><td>flow_cg</td></tr>
+    <tr><td class="num">13</td><td>~0.5 %</td><td class="num">0.60 %</td><td class="num">318</td><td class="num">0.49 (6,050)</td><td class="num fast">0.11 (157)</td><td>flow_cg</td></tr>
+    <tr><td class="num">13</td><td>~2 %</td><td class="num">2.06 %</td><td class="num">1,099</td><td class="num fast">0.13 (1,550)</td><td class="num">0.30 (259)</td><td>bm_admm</td></tr>
+    <tr><td class="num">13</td><td>~10 %</td><td class="num">9.97 %</td><td class="num">5,307</td><td class="num fast">0.08 (950)</td><td class="num">1.68 (456)</td><td>bm_admm</td></tr>
+    <tr><td class="num">14</td><td>pairwise</td><td class="num">0.16 %</td><td class="num">182</td><td class="num">0.86 (8,050)</td><td class="num fast">0.07 (118)</td><td>flow_cg</td></tr>
+    <tr><td class="num">14</td><td>~0.5 %</td><td class="num">0.48 %</td><td class="num">552</td><td class="num">0.55 (5,300)</td><td class="num fast">0.20 (212)</td><td>flow_cg</td></tr>
+    <tr><td class="num">14</td><td>~2 %</td><td class="num">2.06 %</td><td class="num">2,366</td><td class="num fast">0.30 (2,800)</td><td class="num">0.91 (397)</td><td>bm_admm</td></tr>
+    <tr><td class="num">14</td><td>~10 %</td><td class="num">10.0 %</td><td class="num">11,466</td><td class="num fast">0.16 (1,450)</td><td class="num">6.43 (710)</td><td>bm_admm</td></tr>
+    <tr><td class="num">15</td><td>pairwise</td><td class="num">0.09 %</td><td class="num">210</td><td class="num">3.07 (16,850)</td><td class="num fast">0.07 (111)</td><td>flow_cg</td></tr>
+    <tr><td class="num">15</td><td>~0.5 %</td><td class="num">0.52 %</td><td class="num">1,265</td><td class="num">1.44 (7,900)</td><td class="num fast">0.66 (354)</td><td>flow_cg</td></tr>
+    <tr><td class="num">15</td><td>~2 %</td><td class="num">1.97 %</td><td class="num">4,835</td><td class="num fast">0.73 (3,950)</td><td class="num">2.79 (557)</td><td>bm_admm</td></tr>
+    <tr><td class="num">15</td><td>~10 %</td><td class="num">10.0 %</td><td class="num">24,577</td><td class="num fast">0.40 (2,150)</td><td class="num">21.8 (992)*</td><td>bm_admm</td></tr>
+    <tr><td class="num">16</td><td>pairwise</td><td class="num">0.05 %</td><td class="num">240</td><td class="num">7.69 (23,150)</td><td class="num fast">0.09 (121)</td><td>flow_cg</td></tr>
+    <tr><td class="num">16</td><td>~0.5 %</td><td class="num">0.50 %</td><td class="num">2,641</td><td class="num">3.46 (10,650)</td><td class="num fast">1.52 (471)</td><td>flow_cg</td></tr>
+    <tr><td class="num">16</td><td>~2 %</td><td class="num">2.02 %</td><td class="num">10,564</td><td class="num fast">1.82 (5,550)</td><td class="num">9.04 (811)</td><td>bm_admm</td></tr>
+    <tr><td class="num">16</td><td>~10 %</td><td class="num">9.98 %</td><td class="num">52,323</td><td class="num fast">1.23 (3,450)</td><td class="num capped">&gt; 60 (1,291)</td><td>bm_admm</td></tr>
+    <tr><td class="num">17</td><td>pairwise</td><td class="num">0.02 %</td><td class="num">272</td><td class="num">17.2 (26,700)</td><td class="num fast">0.14 (162)</td><td>flow_cg</td></tr>
+    <tr><td class="num">17</td><td>~0.5 %</td><td class="num">0.49 %</td><td class="num">5,440</td><td class="num">10.6 (16,700)</td><td class="num fast">4.76 (685)</td><td>flow_cg</td></tr>
+    <tr><td class="num">17</td><td>~2 %</td><td class="num">2.00 %</td><td class="num">22,310</td><td class="num fast">6.77 (10,450)</td><td class="num">28.7 (1,138)</td><td>bm_admm</td></tr>
+    <tr><td class="num">17</td><td>~10 %</td><td class="num">10.0 %</td><td class="num">111,524</td><td class="num fast">3.93 (5,900)</td><td class="num capped">&gt; 60 (934)</td><td>bm_admm</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="note">A rule with bm_admm only from n = 18 would send the ten rows at ~2 % and ~10 % to flow_cg, 2.3× to 55× slower; two of those runs hit the 60 s cap. * In this measurement the run ended with exit −2, its bracket short of rel 1e-4 by the float32 shift. The class resumes flow_cg once from the engine's columns in that case (<a href="#m-flow_cg">§7</a>), and the run then certifies with 3 more columns.</p>
+
+<h3>The n = 6–13 measurement</h3>
+<p class="note">RTX 5090, default tolerances, 120 s cap per run. Seconds; bm_admm iterations in parentheses where they ran long. The faster of bm_admm and flow_cg is in bold, and the last column is what the rule picks. Both Gurobi QPs are slower than flow_cg in every row. At n = 6 and 8 every method finishes almost every design in under 0.1 s.</p>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th class="num">n</th><th>Design</th><th class="num">Density</th><th class="num">bm_admm</th><th class="num">flow_cg</th><th class="num">flow_qp</th><th class="num">bm_qp</th><th>Picks</th></tr></thead>
+  <tbody>
+    <tr><td class="num">10</td><td>pairwise</td><td class="num">1.76 %</td><td class="num">18.9 (362,850)</td><td class="num fast">0.02</td><td class="num">0.05</td><td class="num">0.77</td><td>flow_cg</td></tr>
+    <tr><td class="num">10</td><td>~10 %</td><td class="num">10.6 %</td><td class="num fast">0.03</td><td class="num">0.08</td><td class="num">0.11</td><td class="num">0.79</td><td>flow_cg</td></tr>
+    <tr><td class="num">10</td><td>every menu</td><td class="num">99.8 %</td><td class="num fast">0.11</td><td class="num">0.66</td><td class="num">0.69</td><td class="num">0.67</td><td>flow_cg</td></tr>
+    <tr><td class="num">11</td><td>pairwise</td><td class="num">0.98 %</td><td class="num">0.71</td><td class="num fast">0.03</td><td class="num">0.13</td><td class="num">4.95</td><td>flow_cg</td></tr>
+    <tr><td class="num">11</td><td>~2 %</td><td class="num">1.95 %</td><td class="num">0.13</td><td class="num fast">0.10</td><td class="num">0.15</td><td class="num">3.08</td><td>flow_cg</td></tr>
+    <tr><td class="num">11</td><td>~10 %</td><td class="num">9.79 %</td><td class="num fast">0.05</td><td class="num">0.19</td><td class="num">0.28</td><td class="num">3.70</td><td>bm_admm</td></tr>
+    <tr><td class="num">11</td><td>every menu</td><td class="num">99.9 %</td><td class="num fast">0.14</td><td class="num">2.00</td><td class="num">3.20</td><td class="num">2.72</td><td>bm_admm</td></tr>
+    <tr><td class="num">12</td><td>pairwise</td><td class="num">0.54 %</td><td class="num">0.70</td><td class="num fast">0.04</td><td class="num">0.32</td><td class="num">48.2</td><td>flow_cg</td></tr>
+    <tr><td class="num">12</td><td>~2 %</td><td class="num">2.15 %</td><td class="num fast">0.11</td><td class="num">0.12</td><td class="num">0.41</td><td class="num">31.3</td><td>bm_admm</td></tr>
+    <tr><td class="num">12</td><td>~10 %</td><td class="num">10.2 %</td><td class="num fast">0.07</td><td class="num">0.66</td><td class="num">1.23</td><td class="num">25.6</td><td>bm_admm</td></tr>
+    <tr><td class="num">12</td><td>every menu</td><td class="num">99.95 %</td><td class="num fast">0.14</td><td class="num">10.2</td><td class="num">23.1</td><td class="num">12.9</td><td>bm_admm</td></tr>
+    <tr><td class="num">13</td><td>pairwise</td><td class="num">0.29 %</td><td class="num">14.9 (190,550)</td><td class="num fast">0.04</td><td class="num">1.02</td><td class="num capped">&gt; 120</td><td>flow_cg</td></tr>
+    <tr><td class="num">13</td><td>~2 %</td><td class="num">2.06 %</td><td class="num fast">0.15</td><td class="num">0.33</td><td class="num">1.66</td><td class="num capped">&gt; 120</td><td>bm_admm</td></tr>
+    <tr><td class="num">13</td><td>~10 %</td><td class="num">9.97 %</td><td class="num fast">0.09</td><td class="num">1.71</td><td class="num">6.13</td><td class="num capped">&gt; 120</td><td>bm_admm</td></tr>
+    <tr><td class="num">13</td><td>every menu</td><td class="num">99.98 %</td><td class="num fast">0.16</td><td class="num">32.5</td><td class="num capped">&gt; 120</td><td class="num">86.3</td><td>bm_admm</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="note">The grid also has 0.5 %, 25 % and 50 % designs at every n; the rule picks the faster method in all 21 cells at n = 11–13. At n ≤ 10 flow_cg is chosen everywhere, at most 0.55 s behind bm_admm.</p>
+
+<h3>Why sparse designs go to flow_cg</h3>
+<p>A bm_admm iteration costs the same whatever the number of observations, and it needs few iterations when many cells are observed. flow_cg pays per observation and needs few columns when there are few. On sparse designs bm_admm is slow to certify, for two different reasons:</p>
+<ul>
+  <li><strong>Small n, pairwise.</strong> The iterate and the lower bound are both within 1e-4 of the optimum after 450–2,000 iterations. The pushed upper bound needs 114,350 (n = 8) to 362,850 (n = 10) iterations. The push clips the iterate's negative Block–Marschak terms on the unobserved lattice, and ADMM removes those slowly.</li>
+  <li><strong>DSR alt0 (n = 25, 301 observations).</strong> Here the iterate itself is far off: its lower bound is 0.99 after 10,000 iterations and 1.40 after 4 h, against a distance of 1.489.</li>
+</ul>
+<p>A sharper upper bound was tried: the 500 heaviest rankings of the pushed flow, then the exact QP over them. It reaches the optimum early on the small pairwise designs, but only 1.95–2.9 on DSR, and at n = 14–17 it never beats the push at 0.5–2 %. It is not adopted: the density rule already sends every such design to flow_cg.</p>
+
+<!-- ============================================================ 5 -->
+<h2 id="certificate"><span class="num">5</span>The certificate</h2>
+<p>Every method ends with lb ≤ dist ≤ ub. The methods differ in where the two bounds come from.</p>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Method</th><th>Upper bound: a feasible point</th><th>Lower bound</th></tr></thead>
+  <tbody>
+    <tr><td><code>bm_admm</code></td><td>the iterate pushed to an exactly feasible RUM point in float64 (Möbius → <code>make_r_feasible_gpu64</code> → zeta → ‖x<sub>ub</sub>[obs] − p̂‖); best one kept</td><td>Frank–Wolfe: f* ≥ f(x) − 2·rc, with rc from a longest path over the 2<sup>n</sup> lattice (GPU, float64), every <code>lb_every</code> checks</td></tr>
+    <tr><td><code>flow_admm</code></td><td>the arc flow pushed to an exactly feasible flow, then zeta, both in float64; best one kept</td><td>the same Frank–Wolfe sweep, at the flow's choice probabilities zeta(r)[obs]</td></tr>
+    <tr><td><code>flow_cg</code></td><td>the master's mixture of rankings; the class recomputes its distance exactly in float64</td><td>at the end, the same Frank–Wolfe bound at the mixture's point (GPU, float64): from the slab up to n = 26, two lattice layers at a time up to n = 33 (32 GB). Above that, the pricing sweep's bound √max(UB² − 2·fw_gap, 0), lowered by δ = ‖p̂ − p̂<sub>float32</sub>‖, flagged <code>lb_rigorous=False</code> (<a href="#storage">§6</a>)</td></tr>
+    <tr><td><code>ip_cg</code>, <code>ip_cg_heur</code></td><td>the master's mixture of rankings</td><td>from the pricing IP's bound (Gurobi ObjBound, valid even if the IP stops early)</td></tr>
+    <tr><td><code>bm_qp</code>, <code>flow_qp</code></td><td>Gurobi's arc flow (flow_qp: r; bm_qp: K p̃) pushed to an exact unit flow on the CPU (<code>push_flow</code>, float64), then its choice probabilities</td><td>the Frank–Wolfe bound at Gurobi's point (<code>fw_lb_rows</code>; with vcov, W·r in place of r). Gurobi's own objective is an estimate, not a bound</td></tr>
+  </tbody>
+</table>
+</div>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="dia" viewBox="0 0 880 250" role="img" aria-label="The bound loop shared by bm_admm and flow_admm. At every check the engine calls push_fn for an upper bound and lb_fn for a lower bound, then tests the gap. It stops when the gap meets a tolerance, and otherwise keeps iterating.">
+    <defs>
+      <marker id="ah4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path class="ah" d="M0,0 L10,5 L0,10 z"/>
+      </marker>
+    </defs>
+    <rect class="box-gpu" x="16" y="74" width="190" height="72" rx="6"/>
+    <text class="t-title" x="111" y="100" text-anchor="middle">engine iterates</text>
+    <text class="t-sm" x="111" y="120" text-anchor="middle">bm_admm: the slab x2</text>
+    <text class="t-sm" x="111" y="136" text-anchor="middle">flow_admm: the arc flow r</text>
+
+    <polyline class="arrow" points="206,110 236,110 236,50 263,50" marker-end="url(#ah4)"/>
+    <polyline class="arrow" points="236,110 236,168 263,168" marker-end="url(#ah4)"/>
+
+    <rect class="box" x="266" y="14" width="232" height="72" rx="6"/>
+    <text class="t-monob" x="382" y="40" text-anchor="middle">push_fn(x) → ub</text>
+    <text class="t-sm" x="382" y="60" text-anchor="middle">an exactly feasible RUM point</text>
+    <text class="t-sm" x="382" y="76" text-anchor="middle">best ub and its p_fit kept</text>
+    <rect class="box" x="266" y="132" width="232" height="72" rx="6"/>
+    <text class="t-monob" x="382" y="158" text-anchor="middle">lb_fn(x) → lb</text>
+    <text class="t-sm" x="382" y="178" text-anchor="middle">Frank–Wolfe sweep, GPU, float64</text>
+    <text class="t-sm" x="382" y="194" text-anchor="middle">every lb_every checks; best kept</text>
+
+    <polyline class="arrow" points="498,50 530,50 530,100 557,100" marker-end="url(#ah4)"/>
+    <polyline class="arrow" points="498,168 530,168 530,120 557,120" marker-end="url(#ah4)"/>
+
+    <rect class="box" x="560" y="74" width="176" height="72" rx="6"/>
+    <text class="t-title" x="648" y="100" text-anchor="middle">gap test</text>
+    <text class="t-mono" x="648" y="120" text-anchor="middle">ub − lb ≤ abs_tol</text>
+    <text class="t-mono" x="648" y="136" text-anchor="middle">(ub − lb)/lb ≤ rel_tol</text>
+
+    <line class="arrow" x1="736" y1="110" x2="773" y2="110" marker-end="url(#ah4)"/>
+    <text class="t-sm" x="755" y="102" text-anchor="middle">yes</text>
+    <rect class="box-new" x="776" y="74" width="88" height="72" rx="6"/>
+    <text class="t-title" x="820" y="104" text-anchor="middle">stop</text>
+    <text class="t-xs" x="820" y="122" text-anchor="middle">gap_abs /</text>
+    <text class="t-xs" x="820" y="136" text-anchor="middle">gap_rel</text>
+    <text class="t-xs" x="820" y="30" text-anchor="middle">a hook past the deadline</text>
+    <text class="t-xs" x="820" y="45" text-anchor="middle">raises _TimeUp → exit 0</text>
+
+    <polyline class="arrow" points="648,146 648,222 111,222 111,149" marker-end="url(#ah4)"/>
+    <text class="t-sm" x="380" y="241" text-anchor="middle">no → keep iterating to the next check</text>
+  </svg>
+  </div>
+  <figcaption>The bound loop that bm_admm and flow_admm share. The engine calls the class's two hooks every <code>check</code> iterations (50 by default) and stops itself once the bracket meets either tolerance.</figcaption>
+</figure>
+
+<!-- ============================================================ 6 -->
+<h2 id="storage"><span class="num">6</span>Storage formats</h2>
+<p>Each GPU method keeps its working values in one format, chosen per call with <code>method_args={"dtype": …}</code>. Without it, the class takes <strong>the most precise format that fits</strong> 90 % of the free GPU memory. The tolerance never lowers precision: a format that cannot reach the tolerance still runs, and the result's message says so. An explicit dtype that does not fit raises before solving, with the sizes.</p>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Method</th><th><code>dtype</code> you can pass</th><th>Without <code>dtype</code></th><th>What it stores</th></tr></thead>
+  <tbody>
+    <tr><td><code>bm_admm</code></td><td>float64, float32</td><td>float64. When that does not fit (n ≥ 24 on 32 GB), auto takes flow_cg; an explicit bm_admm raises and names float32's size</td><td>the ADMM state, 14 slabs of n·2<sup>n−1</sup>. float32 halves the memory, but its pushed ub stalls: n18_m39 is still 2.6 % above its lb after 120 s</td></tr>
+    <tr><td><code>flow_cg</code></td><td>float32, uint24, uint16</td><td>the first that fits: float32 (whole lattice, else two layers), then uint24, then uint16</td><td>the pricing values. uint24 and uint16 are block-scaled integers: they save memory, not time (uint16 is 3–6 % slower per column)</td></tr>
+    <tr><td><code>flow_admm</code></td><td>float32</td><td>float32</td><td>the ADMM state (its kernels are float32). Mhat and the Schur factor are always float64: in float32 the solve diverges</td></tr>
+    <tr><td><code>ip_cg</code>, <code>ip_cg_heur</code>, <code>bm_qp</code>, <code>flow_qp</code></td><td>—</td><td>float64</td><td>Gurobi's models, on the CPU</td></tr>
+  </tbody>
+</table>
+</div>
+<p>flow_cg's <code>pricing</code> is the layout only: <code>"mask"</code> (one value per subset, n ≤ 32) or <code>"stream"</code> (two live layers, rank-indexed). The old names <code>stream_f32</code>, <code>stream_u24</code> and <code>stream_u16</code> still work and set both. The result reports <code>pricing</code> and <code>dtype</code> separately, and <code>info["pricing"]</code> keeps the engine's backend name. The race (<a href="#legacy">§9</a>) keeps its own arguments.</p>
+
+<h3>The bounds are not a choice</h3>
+<p>Whatever the dtype, both bounds are float64 wherever a float64 form fits. bm_admm and flow_admm take the lower bound from the slab (<a href="#certificate">§5</a>). flow_cg's final lower bound takes the first of these that fits, once the pricing buffers are freed:</p>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Form</th><th>Device memory</th><th class="num">Largest n, 32 GB</th><th class="num">141 GB</th><th><code>info</code></th></tr></thead>
+  <tbody>
+    <tr><td>float64 from the slab (<code>fw_lb_rows_gpu</code>)</td><td>16 B per slab entry + 16 B per node</td><td class="num">26</td><td class="num">29</td><td><code>lb_layout="slab"</code>, <code>lb_rigorous=True</code></td></tr>
+    <tr><td>float64, two lattice layers at a time (<code>fw_lb_stream64</code>)</td><td>16 B per rank of the widest layer</td><td class="num">33</td><td class="num">35</td><td><code>"two layers"</code>, <code>True</code></td></tr>
+    <tr><td>the pricing sweep's own bound, lowered by δ</td><td>none extra</td><td class="num">35</td><td class="num">37</td><td><code>"pricing sweep"</code>, <code>False</code></td></tr>
+  </tbody>
+</table>
+</div>
+<p>The last form does not cover the float32 rounding inside the sweep; for uint24 and uint16, the margin covers the rounding of the stored values but not the float32 arithmetic. So <code>lb_rigorous</code> is False and the message says so. On a 32 GB card that happens only at n = 34–35. <code>info["lb_dtype"]</code> names the format the bound was computed in.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="dia" viewBox="0 0 900 310" role="img" aria-label="Largest n each storage format fits. On a 32 GB card: bm_admm float64 23, float32 24; flow_cg mask pricing 32, two-layer float32 34, uint24 35, uint16 35; the float64 lower bound from the slab 26, two layers at a time 33. On a 141 GB card: 25, 26, 32, 36, 37, 37, 29 and 35.">
+    <text class="t-sm" x="16" y="26" font-weight="600">Working storage</text>
+    <text x="214" y="53" text-anchor="end">bm_admm state, float64</text>
+    <rect class="bar-32" x="236" y="42" width="113.7" height="14" rx="2"/>
+    <rect class="bar-big" x="349.7" y="42" width="56.8" height="14" rx="2"/>
+    <text class="t-mono" x="790" y="53">23 / 25</text>
+    <text x="214" y="77" text-anchor="end">bm_admm state, float32</text>
+    <rect class="bar-32" x="236" y="66" width="142.1" height="14" rx="2"/>
+    <rect class="bar-big" x="378.1" y="66" width="56.8" height="14" rx="2"/>
+    <text class="t-mono" x="790" y="77">24 / 26</text>
+    <text x="214" y="101" text-anchor="end">flow_cg pricing, mask (float32)</text>
+    <rect class="bar-32" x="236" y="90" width="369.5" height="14" rx="2"/>
+    <text class="t-mono" x="790" y="101">32</text>
+    <text x="214" y="125" text-anchor="end">pricing, two layers, float32</text>
+    <rect class="bar-32" x="236" y="114" width="426.3" height="14" rx="2"/>
+    <rect class="bar-big" x="662.3" y="114" width="56.8" height="14" rx="2"/>
+    <text class="t-mono" x="790" y="125">34 / 36</text>
+    <text x="214" y="149" text-anchor="end">pricing, two layers, uint24</text>
+    <rect class="bar-32" x="236" y="138" width="454.7" height="14" rx="2"/>
+    <rect class="bar-big" x="690.7" y="138" width="56.8" height="14" rx="2"/>
+    <text class="t-mono" x="790" y="149">35 / 37</text>
+    <text x="214" y="173" text-anchor="end">pricing, two layers, uint16</text>
+    <rect class="bar-32" x="236" y="162" width="454.7" height="14" rx="2"/>
+    <rect class="bar-big" x="690.7" y="162" width="56.8" height="14" rx="2"/>
+    <text class="t-mono" x="790" y="173">35 / 37</text>
+    <text class="t-sm" x="16" y="194" font-weight="600">flow_cg's float64 lower bound</text>
+    <text x="214" y="221" text-anchor="end">from the slab</text>
+    <rect class="bar-32" x="236" y="210" width="198.9" height="14" rx="2"/>
+    <rect class="bar-big" x="434.9" y="210" width="85.3" height="14" rx="2"/>
+    <text class="t-mono" x="790" y="221">26 / 29</text>
+    <text x="214" y="245" text-anchor="end">two layers at a time</text>
+    <rect class="bar-32" x="236" y="234" width="397.9" height="14" rx="2"/>
+    <rect class="bar-big" x="633.9" y="234" width="56.8" height="14" rx="2"/>
+    <text class="t-mono" x="790" y="245">33 / 35</text>
+    <line class="tick" x1="236" y1="266" x2="776" y2="266"/>
+    <line class="tick" x1="250.2" y1="266" x2="250.2" y2="271"/>
+    <text class="t-sm" x="250.2" y="284" text-anchor="middle">20</text>
+    <line class="tick" x1="307.1" y1="266" x2="307.1" y2="271"/>
+    <text class="t-sm" x="307.1" y="284" text-anchor="middle">22</text>
+    <line class="tick" x1="363.9" y1="266" x2="363.9" y2="271"/>
+    <text class="t-sm" x="363.9" y="284" text-anchor="middle">24</text>
+    <line class="tick" x1="420.7" y1="266" x2="420.7" y2="271"/>
+    <text class="t-sm" x="420.7" y="284" text-anchor="middle">26</text>
+    <line class="tick" x1="477.6" y1="266" x2="477.6" y2="271"/>
+    <text class="t-sm" x="477.6" y="284" text-anchor="middle">28</text>
+    <line class="tick" x1="534.4" y1="266" x2="534.4" y2="271"/>
+    <text class="t-sm" x="534.4" y="284" text-anchor="middle">30</text>
+    <line class="tick" x1="591.3" y1="266" x2="591.3" y2="271"/>
+    <text class="t-sm" x="591.3" y="284" text-anchor="middle">32</text>
+    <line class="tick" x1="648.1" y1="266" x2="648.1" y2="271"/>
+    <text class="t-sm" x="648.1" y="284" text-anchor="middle">34</text>
+    <line class="tick" x1="704.9" y1="266" x2="704.9" y2="271"/>
+    <text class="t-sm" x="704.9" y="284" text-anchor="middle">36</text>
+    <line class="tick" x1="761.8" y1="266" x2="761.8" y2="271"/>
+    <text class="t-sm" x="761.8" y="284" text-anchor="middle">38</text>
+    <text class="t-sm" x="506.0" y="300" text-anchor="middle">n (alternatives); bars start below n = 20</text>
+    <text class="t-sm" x="790" y="16">largest n:</text>
+    <text class="t-sm" x="790" y="30">32 GB / 141 GB</text>
+  </svg>
+  </div>
+  <figcaption>The largest n each format fits, from the planners' memory formulas with 90 % of the free memory: solid on a 32 GB card (27.4 GiB), dashed where only a 141 GB card (126 GiB) holds it. The numbers on the right are the two limits. Mask pricing stops at n = 32 on any card, because its menus are 32-bit masks.</figcaption>
+  <div class="legend"><span><i class="sw sw-32"></i>fits a 32 GB card</span><span><i class="sw sw-big"></i>fits only a 141 GB card</span></div>
+</figure>
+
+<h3>What auto picks, n by n, on a 32 GB card</h3>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>n</th><th>bm_admm state</th><th>flow_cg pricing</th><th>flow_cg's final lower bound</th></tr></thead>
+  <tbody>
+    <tr><td class="nowrap">≤ 23</td><td>float64</td><td>mask, float32</td><td>float64, slab</td></tr>
+    <tr><td class="nowrap">24</td><td>does not fit: auto takes flow_cg</td><td>mask, float32</td><td>float64, slab</td></tr>
+    <tr><td class="nowrap">25–26</td><td>—</td><td>mask, float32</td><td>float64, slab</td></tr>
+    <tr><td class="nowrap">27–32</td><td>—</td><td>mask, float32</td><td>float64, two layers</td></tr>
+    <tr><td class="nowrap">33</td><td>—</td><td>two layers, float32</td><td>float64, two layers</td></tr>
+    <tr><td class="nowrap">34</td><td>—</td><td>two layers, float32</td><td>the float32 pricing bound − δ, <code>lb_rigorous=False</code></td></tr>
+    <tr><td class="nowrap">35</td><td>—</td><td>two layers, uint24 (uint16 below 28.6 GiB free)</td><td>the pricing bound with its margin, <code>lb_rigorous=False</code></td></tr>
+    <tr><td class="nowrap">≥ 36</td><td>—</td><td>does not fit (a 141 GB card holds uint24 and uint16 to n = 37)</td><td>—</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="note">The bm_admm column says which format it gets when the density rule (<a href="#auto">§4</a>) picks it. At n = 35 uint16 is only 2 % faster than uint24 (708 s against 721 s, the same 103 columns), so auto takes uint24 whenever it fits and the tolerance has nothing to decide.</p>
+
+<h3>Not built, and why</h3>
+<ul>
+  <li><strong>Auto never picks a float32 BM-ADMM state.</strong> It does not certify: n18_m39 is still 2.6 % above its lb after 120 s, where float64 certifies rel 1e-4 in 22.5 s, and in 88 of 90 race cells the float32 leg stalled before 1 %. It would only matter at one n per card (24 on 32 GB, 26 on 141 GB), and flow_cg fits there.</li>
+  <li><strong>No rounded-up float32 bound for n = 34.</strong> It would cover one n on one card (a 141 GB card does n = 34 in float64, two layers at a time).</li>
+  <li><strong>No float64 pricing.</strong> With the final bound in float64, pricing precision only changes which column is picked: the master recomputes each column's reduced cost in float64. It would double the memory, at 1/64 of the single-precision rate on GeForce cards.</li>
+  <li><strong>No float64 flow_admm state.</strong> It is never chosen automatically, and every kernel of its loop would need a float64 version.</li>
+</ul>
+
+<h3>How it was checked</h3>
+<ul>
+  <li>The two-layer sweep's maximum equals the slab's longest path to 5e-16 at n = 3–26, and the two bounds at flow_cg's own points agree to 4e-16 (pairwise n = 8–26, random menus n = 8–14).</li>
+  <li>Its device memory equals the planner's formula (which includes 4 KiB for the memory pool's rounding). One bound on the pairwise design takes 0.03 s at n = 26, 0.63 s at n = 30, 2.9 s at n = 32 and 6.1 s at n = 33.</li>
+  <li>Through the class at n = 20, each bound form (the slab, and the other two forced) and each dtype: two layers equal the slab (the same 199 columns and ub, lb within 2e-16); stream float32 equals mask exactly; uint24 gives the same 199 columns; uint16 certifies in 197. The forced pricing-sweep form reports <code>lb_rigorous=False</code> with its note; bm_admm float32 and flow_admm run.</li>
+  <li>Against the float32 bound lowered by δ, on the pairwise design at rel 1e-3: the same columns and ub in every cell, a higher lower bound and about the same time:
+    <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Cell</th><th class="num">Columns</th><th class="num">lb gain in float64</th><th class="num">Time, float32 bound → float64</th></tr></thead>
+      <tbody>
+        <tr><td>n27_sparse</td><td class="num">284</td><td class="num">+6.5e-7</td><td class="num">4.9 → 4.9 s</td></tr>
+        <tr><td>n30_sparse</td><td class="num">321</td><td class="num">+1.9e-8</td><td class="num">52.2 → 52.8 s</td></tr>
+        <tr><td>n32_sparse</td><td class="num">341</td><td class="num">+2.8e-7</td><td class="num">245.2 → 248.1 s</td></tr>
+        <tr><td>n33_sparse</td><td class="num">345</td><td class="num">+9.6e-8</td><td class="num">576.3 → 584.5 s</td></tr>
+      </tbody>
+    </table>
+    </div></li>
+</ul>
+
+<!-- ============================================================ 7 -->
+<h2 id="methods"><span class="num">7</span>The seven methods</h2>
+<p>Each method can be called through the class (<code>method="…"</code>, <code>method_args={…}</code>) or as its engine directly. Below, <code>cd</code> is the (mp, 3) array of rows (menu, alternative, p̂) that the engines take, and <code>geom</code> is the class's geometry object. Any object with <code>menu</code>, <code>alternative</code>, <code>num_alternatives</code> and <code>M</code> works as <code>geom</code>, including the older class <code>solver.rum.RUM</code>.</p>
+
+<article class="method" id="m-bm_admm">
+  <div class="method-head">
+    <h3><code>bm_admm</code></h3>
+    <span class="tag tag-gpu">GPU</span><span class="tag">chosen automatically</span>
+    <span class="paper">paper: BM-ADMM</span>
+  </div>
+  <p class="lede-m">ADMM on the Block–Marschak formulation, matrix-free on the GPU. The default for dense designs.</p>
+  <dl class="kv">
+    <dt>Variables</dt><dd>One value per (alternative i, menu S containing i): a slab of n·2<sup>n−1</sup> entries, with i's block at i·2<sup>n−1</sup> + compress(S∖{i}). The Block–Marschak terms are the superset Möbius transform of the slab.</dd>
+    <dt>One iteration</dt><dd>Five fused elementwise kernels, one prox launch over all menus, and the Möbius/eigen butterflies. The butterfly stage plan is measured on this GPU once per process. With <code>use_graph</code> the whole iteration replays as one CUDA graph (n ≤ 22).</dd>
+    <dt>Bounds</dt><dd>Every <code>check</code> iterations: push in float64 → UB. The best UB is kept, and <code>p_fit</code> is taken at that push. Every <code>lb_every</code> checks: the Frank–Wolfe LB, a float64 sweep on the GPU (1.3 ms at n = 20).</dd>
+    <dt>Memory</dt><dd>Measured peak plus 10 %: 1.1 × 145 B per slab entry in float64 with the graph, 141 B without. That is 1.6 GB at n = 20 and 13.9 GB at n = 23. At n = 24 it needs 29.1 GB, which does not fit, so the automatic choice takes flow_cg. float32 takes 1.1 × 92 B (82 B without the graph): 16.9 GB at n = 24.</dd>
+    <dt>Settings</dt><dd><code>beta=None</code> (= 0.033·mp<sup>0.51</sup>), <code>alpha=1.95</code>, <code>precond_p=√2</code>, <code>check=50</code>, <code>lb_every=1</code>, <code>dtype="auto"</code> (= float64; float32 only when asked, <a href="#storage">§6</a>), <code>use_graph="auto"</code> (n ≤ 22), <code>max_iter=10**7</code></dd>
+    <dt>Files</dt><dd><code>bm_admm/solver.py</code> (solve_kadmm_v2, solve_kadmm_hybrid) · <code>butterfly2.py</code> (calibrated butterflies) · <code>kernels.py</code> · <code>__init__.py</code> (solve_bm_admm, warmup)</dd>
+  </dl>
+  <div class="calls">
+    <h4>Through the class</h4>
+<pre><code>res = rum.calculate_distance(method="bm_admm",
+                             method_args={"check": 100, "lb_every": 4})</code></pre>
+    <h4>The engine directly</h4>
+<pre><code>from solver.bm_admm.solver import solve_kadmm_v2
+from solver.common.transforms import build_obs_idx, push_to_ub64   <span class="cm"># for push(x2)</span>
+from solver.common.transforms import fw_lb_rows_gpu               <span class="cm"># for lower(x2)</span>
+
+r = solve_kadmm_v2(n, cd, beta1=b, beta2=b, alpha_relax=1.95, precond_p=2 ** 0.5,
+                   check=50, push_fn=push, lb_fn=lower,      <span class="cm"># push(x2) -> ub, lower(x2) -> lb</span>
+                   ub_arm_immediately=True, ub_running_min=True,
+                   gap_abs_tol=1e-5, gap_rel_tol=1e-4, time_limit=600,
+                   dtype="float64", use_graph=True)
+r["stop_reason"], r["iters"], r["setup_s"], r["per_iter_ms"]</code></pre>
+  </div>
+  <p class="watch"><strong>Watch:</strong> float32 does not certify, because the pushed UB stalls. On n18_m39 at rel 1e-4, float64 certifies in 22.5 s, while float32 is still 2.6 % above its LB after 120 s. A float32 call that misses the tolerances says so in its message.</p>
+</article>
+
+<article class="method" id="m-flow_cg">
+  <div class="method-head">
+    <h3><code>flow_cg</code></h3>
+    <span class="tag tag-gpu">GPU</span><span class="tag">chosen automatically</span>
+    <span class="paper">paper: Flow-CG</span>
+  </div>
+  <p class="lede-m">Column generation over preference rankings: Bellman–Ford pricing on the GPU, the master QP on the CPU. The default for sparse designs, and for any n where bm_admm does not fit.</p>
+  <dl class="kv">
+    <dt>Problem</dt><dd>dist(p̂)² = the minimum over mixtures λ of ranking columns of ‖Vλ − p̂‖². A ranking's column is 1 on each observed row whose alternative that ranking picks from the menu.</dd>
+    <dt>One iteration</dt><dd>One column per iteration:
+      <ol>
+        <li>Solve the master QP over the simplex. It is an active-set Cholesky on Q = V′V and h = V′p̂, kept up to date from packed column bitsets, so V is never formed.</li>
+        <li>Read the residual off Q, h and λ.</li>
+        <li>Price: the best ranking is a longest path through the subset lattice. With <code>mask</code> pricing that is one kernel per cardinality layer; for large n it is a streamed, rank-indexed sweep (<code>stream_*</code>).</li>
+        <li>Test the gap.</li>
+        <li>Add the column.</li>
+      </ol></dd>
+    <dt>Bounds</dt><dd>UB = the mixture's distance, recomputed exactly in float64 by the class. During the solve, LB = √max(UB² − 2·fw_gap, 0) from the pricing sweep, a running max. The engine rounds p̂ to float32, so the class lowers that LB by δ = ‖p̂ − p̂<sub>float32</sub>‖ and asks the engine for abs_tol − 2δ. At the end the class replaces it with the float64 Frank–Wolfe bound at the mixture's point, on the GPU: from the slab up to n = 26 on 32 GB, two lattice layers at a time up to n = 33 (<code>info["lb_dtype"]</code>, <code>["lb_layout"]</code>, <code>["lb_rigorous"]</code>; <a href="#storage">§6</a>).</dd>
+    <dt>Memory</dt><dd>GPU, mask pricing: 5·2<sup>n</sup> + 4·2<sup>n</sup> bytes up to n = 28 (layers stored), and 5·2<sup>n</sup> + 4·C(n, n/2) above that. That is 5.6 GB at n = 30 and 22 GB at n = 32; the two-layer pricers go further (float32 to n = 34, uint24 and uint16 to n = 35). Host: the Gram matrix, 8·K² bytes for K = max_iters + 2 columns.</dd>
+    <dt>Settings</dt><dd><code>dtype="auto"</code> (the pricing values: float32 where it fits, then uint24, then uint16), <code>pricing="auto"</code> (the layout: mask where it fits, else stream; the old names stream_f32, stream_u24, stream_u16 still work), <code>layers="auto"</code>, <code>max_iters=4000</code> (columns)</dd>
+    <dt>Files</dt><dd><code>flow_cg/__init__.py</code> (solve_cgbfqp, warmup) · <code>solver.py</code> (the loop) · <code>cg_core.py</code> (CGData, lattice layers, ranking → column) · <code>bf_pricing.py</code> · <code>pricing_stream.py</code> (StreamPricer; <code>sweep_max64</code>, the float64 two-layer sweep of the final bound) · <code>qp_bitset_incremental.py</code> · <code>common/qp_native.py</code> (master QP)</dd>
+  </dl>
+  <div class="calls">
+    <h4>Through the class</h4>
+<pre><code>res = rum.calculate_distance(method="flow_cg", method_args={"max_iters": 8000})
+res = rum.calculate_distance(method="flow_cg", method_args={"dtype": "uint16"})   <span class="cm"># two layers, uint16</span></code></pre>
+    <h4>The engine directly</h4>
+<pre><code>from solver.flow_cg import solve_cgbfqp
+
+r = solve_cgbfqp(n, cd, criterion="cert", rel_tol=1e-4, abs_tol=1e-5,
+                 time_limit=600, max_iters=4000, seed=0, pricing="mask",
+                 return_state=True)
+r["ub"], r["lb"], r["iters"], r["stop"]        <span class="cm"># + columns, lam, p_out</span>
+<span class="cm"># warm restart: solve_cgbfqp(..., init_columns=r["columns"], init_lambda=r["lam"])</span></code></pre>
+  </div>
+  <p class="watch"><strong>Watch:</strong> the engine stops on its own float32 bracket. If the float64 bracket then misses both tolerances, the class resumes once from the engine's own columns, with both tolerances tightened by the miss. At n = 34–35 on a 32 GB GPU no float64 form fits, so the final bound is the pricing sweep's own, lowered by δ and flagged <code>lb_rigorous=False</code> (<a href="#storage">§6</a>).</p>
+</article>
+
+<article class="method" id="m-flow_admm">
+  <div class="method-head">
+    <h3><code>flow_admm</code></h3>
+    <span class="tag tag-gpu">GPU</span><span class="tag">named only</span>
+    <span class="paper">paper: Flow-ADMM</span>
+  </div>
+  <p class="lede-m">ADMM on the arc-flow formulation, with a prestored dense m<sub>p</sub> × m<sub>p</sub> matrix. Never chosen automatically. It pays off when the same menus are solved many times, because the matrix is reused.</p>
+  <dl class="kv">
+    <dt>Problem</dt><dd>r is a unit flow from ∅ to the full set on the subset-lattice digraph: n·2<sup>n−1</sup> arcs, in the same layout as bm_admm's slab. The constraints are A r = b and r ≥ 0. The choice probabilities are y = zeta(r)[obs], and the objective is ‖y − p̂‖².</dd>
+    <dt>Setup</dt><dd>Mhat = C H0<sup>−1</sup> C′ (m<sub>p</sub> × m<sub>p</sub>, float64), plus the Cholesky factor of its Schur complement. Mhat depends only on the menus and on (beta2, beta3). The class keeps it on the RUM object (up to 1/8 of RAM), so later calls skip the build: on n18_m39, setup drops from 4.8 s to 0.7 s.</dd>
+    <dt>One iteration</dt><dd>float32 kernels: A / A′, the Woodbury solve with H0, and the zeta operators C / C′. The two penalties are rebalanced every 25 iterations (adaptive).</dd>
+    <dt>Bounds</dt><dd>Every <code>check</code> iterations: push r to an exactly feasible flow and apply zeta, both in float64 → UB, best kept. Every <code>lb_every</code> checks: the Frank–Wolfe sweep at zeta(r)[obs], in float64 on the GPU → LB.</dd>
+    <dt>Memory</dt><dd>Measured: 1.1 × (55 B per m<sub>p</sub>² + 82 B per slab entry) + 0.25 GB. It must fit 90 % of the free GPU memory, so it never spills to host memory. n20_d1pct would need 621 GB, so it is refused.</dd>
+    <dt>Settings</dt><dd><code>dtype="auto"</code> (= float32, its only kernels), <code>beta2=2.0</code>, <code>beta3=0.05</code>, <code>alpha=1.8</code>, <code>adaptive=True</code>, <code>check=50</code>, <code>lb_every=1</code>, <code>max_iter=10**7</code></dd>
+    <dt>Files</dt><dd><code>flow_admm/solver.py</code> (solve_arcflow_fast) · <code>__init__.py</code> (solve_flow_admm: race only, Mhat cached on disk in data/cache_mhat) · <code>common/arcflow_kernels.py</code></dd>
+  </dl>
+  <div class="calls">
+    <h4>Through the class</h4>
+<pre><code>res  = rum.calculate_distance(method="flow_admm", rel_tol=1e-3)
+res2 = rum.calculate_distance(method="flow_admm", rel_tol=1e-3, p=p_draw)   <span class="cm"># reuses Mhat</span></code></pre>
+    <h4>The engine directly</h4>
+<pre><code>from solver.flow_admm.solver import solve_arcflow_fast
+
+r = solve_arcflow_fast(n, cd, mhat=None, opts=dict(
+        beta2=2.0, beta3=0.05, alpha_relax=1.8, adapt_on=True,
+        log_every=50, maxiter=10 ** 7, time_limit=600,
+        push_fn=push, lb_fn=lower,               <span class="cm"># push(r) -> ub, lower(r) -> lb</span>
+        gap_abs_tol=1e-5, gap_rel_tol=1e-4,
+        progress_fn=tick, keep_mhat=True))       <span class="cm"># tick() every 256 Mhat columns</span>
+r["stop_reason"], r["iters"], r["mhat_s"], r["mhat"]   <span class="cm"># pass mhat= next time</span></code></pre>
+  </div>
+  <p class="watch"><strong>Watch:</strong> it certifies n = 8 at rel 1e-4 in under 1 s, and n18_sparse, n20_sparse and n18_m39 at rel 1e-3 in 2, 26 and 7 s. Its tail at rel 1e-4 is slow: n18_sparse is still at 2.2e-4 after 600 s.</p>
+</article>
+
+<article class="method" id="m-ip_cg">
+  <div class="method-head">
+    <h3><code>ip_cg</code></h3>
+    <span class="tag tag-cpu">CPU + Gurobi</span><span class="tag">named only</span>
+    <span class="paper">paper: IP-CG</span>
+  </div>
+  <p class="lede-m">Column generation with an exact integer-programming pricing step. Takes any weight matrix.</p>
+  <dl class="kv">
+    <dt>One iteration</dt><dd>One column per iteration:
+      <ol>
+        <li>Solve the master QP over the current columns: the native active set, warm-started from the last support, or Gurobi's barrier.</li>
+        <li>Compute the residual g = Ω(p̂ − Vλ).</li>
+        <li>Price with the IP: find the ranking with the largest v<sub>r</sub>·g. There is one Gurobi MIP per geometry, and only its objective changes.</li>
+        <li>Run the gap tests.</li>
+        <li>Add the column.</li>
+      </ol></dd>
+    <dt>Bounds</dt><dd>UB = the master's mixture. LB = from the IP's ObjBound. With <code>strict=True</code>, which the class sets, a column already in the master ends the run as "stalled" instead of being added again.</dd>
+    <dt>Settings</dt><dd><code>qp_backend="native"</code>, <code>threads=None</code> (Gurobi's default), <code>max_iters=100000</code></dd>
+    <dt>Files</dt><dd><code>ip_cg/cgip.py</code> (build_cgip, solve_cgip, _cg_solve) · <code>ip_cg/__init__.py</code> (solve_cgip_paper) · <code>common/solve_qp.py</code>, <code>qp_native.py</code>, <code>qp_gurobi.py</code>, <code>gurobi_env.py</code></dd>
+  </dl>
+  <div class="calls">
+    <h4>Through the class</h4>
+<pre><code>res = rum.calculate_distance(method="ip_cg", vcov=W, method_args={"threads": 8})</code></pre>
+    <h4>The engine directly</h4>
+<pre><code>from solver.ip_cg import cgip
+
+cgip.build_cgip(geom)                    <span class="cm"># the pricing model, cached on geom.cgip</span>
+out = cgip.solve_cgip(geom, p, vcov=None, mode="ip", abs_tol=1e-5, rel_tol=1e-4,
+                      max_iters=100000, seed=0, qp_backend="native",
+                      strict=True, time_limit=600)
+out["UB"], out["LB"], out["converged"], out["stop_reason"], out["p_pred"]</code></pre>
+  </div>
+  <p class="watch"><strong>Watch:</strong> with <code>qp_backend="gurobi"</code> the master is solved only to about 1e-7, so near distance 0 it cannot certify; it stops with exit −2 and a message that says so. The native master certifies the same case at 2e-13.</p>
+</article>
+
+<article class="method" id="m-ip_cg_heur">
+  <div class="method-head">
+    <h3><code>ip_cg_heur</code></h3>
+    <span class="tag tag-cpu">CPU + Gurobi</span><span class="tag">automatic without a GPU, n &gt; 10</span>
+    <span class="paper">paper: IP-H-CG</span>
+  </div>
+  <p class="lede-m">ip_cg with a cheap pricing step tried first: randomized best-position insertion (numba). The IP runs only when the heuristic's gain drops below <code>tol</code>, either to certify or to find the column.</p>
+  <dl class="kv">
+    <dt>One iteration</dt><dd>The same master as ip_cg. Pricing runs <code>n_restart</code> random insertion constructions, seeded with seed + iteration, and keeps the best. If its gain is below <code>tol</code>, the IP prices instead.</dd>
+    <dt>Bounds</dt><dd>As ip_cg: the IP's ObjBound whenever the IP runs; strict mode as above.</dd>
+    <dt>Settings</dt><dd><code>qp_backend="native"</code>, <code>threads=None</code>, <code>max_iters=100000</code>, <code>n_restart=1</code>, <code>tol=1e-6</code></dd>
+    <dt>Files</dt><dd><code>ip_cg/cgip.py</code> (build_cgipheuristic, solve_cgipheuristic_rand, the numba kernels)</dd>
+  </dl>
+  <div class="calls">
+    <h4>Through the class</h4>
+<pre><code>res = rum.calculate_distance(method="ip_cg_heur", method_args={"n_restart": 4})</code></pre>
+    <h4>The engine directly</h4>
+<pre><code>cgip.build_cgipheuristic(geom)           <span class="cm"># cached on geom.cgipheuristic</span>
+out = cgip.solve_cgipheuristic_rand(geom, p, vcov=None, tol=1e-6, n_restart=1,
+                                    abs_tol=1e-5, rel_tol=1e-4, max_iters=100000,
+                                    seed=0, qp_backend="native", strict=True,
+                                    time_limit=600)</code></pre>
+  </div>
+</article>
+
+<article class="method" id="m-bm_qp">
+  <div class="method-head">
+    <h3><code>bm_qp</code></h3>
+    <span class="tag tag-cpu">CPU + Gurobi</span><span class="tag">named only</span>
+  </div>
+  <p class="lede-m">The Block–Marschak QP written out and handed to Gurobi. Exact, for small n.</p>
+  <dl class="kv">
+    <dt>Problem</dt><dd>min ‖W p̃ − p‖²<sub>Ω</sub> s.t. K p̃ ≥ 0, S p̃ = 1, p̃ ≥ 0. It has n·2<sup>n−1</sup> variables, so the class allows it only up to n = 15.</dd>
+    <dt>Bounds</dt><dd>Gurobi's point is certified like any iterate. ub: its flow K p̃ pushed to an exact unit flow; <code>p_fit</code> is that point. lb: the Frank–Wolfe bound at Gurobi's point. Gurobi's own value goes to <code>info["gurobi_distance"]</code>: it meets the constraints only to Gurobi's tolerances and is not a bound. A point at Gurobi's time limit gets a bracket too (exit 0). On the n = 6–12 grid the bracket was at most 1.1e-5 wide (n = 11 m1, relative 2.1e-5).</dd>
+    <dt>Settings</dt><dd><code>threads=None</code>, <code>method=-1</code> (Gurobi's Method), <code>mem_limit=None</code> (GB)</dd>
+    <dt>Files</dt><dd><code>exact_qp/flow_bm_qp.py</code> (build_BM, BMBuild, solve_BM_qp)</dd>
+  </dl>
+  <div class="calls">
+    <h4>The engine directly</h4>
+<pre><code>from solver.exact_qp import flow_bm_qp
+
+flow_bm_qp.build_BM(geom)                <span class="cm"># K, S, W; cached on geom.bm_qp</span>
+geom.bm_qp.model(None)                   <span class="cm"># the persistent Gurobi model (weights or None)</span>
+out = flow_bm_qp.solve_BM_qp(geom, p, vcov=None, time_limit=600, mem_limit=None, method=-1)
+out["status"], out["distance"], out["p_pred"]</code></pre>
+  </div>
+</article>
+
+<article class="method" id="m-flow_qp">
+  <div class="method-head">
+    <h3><code>flow_qp</code></h3>
+    <span class="tag tag-cpu">CPU + Gurobi</span><span class="tag">automatic without a GPU, n ≤ 10</span>
+  </div>
+  <p class="lede-m">The arc-flow QP in Gurobi: the same answer as bm_qp, from the flow formulation. The automatic choice without a GPU up to n = 10: faster than bm_qp on every n ≤ 10 design but the full one, and at n = 10 a 15–200× narrower bracket.</p>
+  <dl class="kv">
+    <dt>Problem</dt><dd>min ‖y − p‖²<sub>Ω</sub> s.t. y = Z r, A r = b, r ≥ 0. It has n·2<sup>n−1</sup> arcs and 2<sup>n</sup> conservation rows, and the class allows it up to n = 15.</dd>
+    <dt>Bounds, settings</dt><dd>As bm_qp; the push starts from Gurobi's arc flow r. On the n = 6–12 grid the bracket was at most 8e-8 wide. A bracket wider than the tolerances gives exit −2 with a message giving the gap and what to try next.</dd>
+    <dt>Files</dt><dd><code>exact_qp/flow_bm_qp.py</code> (build_arc_flow, FlowBuild, solve_arc_flow_qp)</dd>
+  </dl>
+  <div class="calls">
+    <h4>The engine directly</h4>
+<pre><code>flow_bm_qp.build_arc_flow(geom)          <span class="cm"># A, b, Z; cached on geom.flow_qp</span>
+geom.flow_qp.model(geom.M, None)
+out = flow_bm_qp.solve_arc_flow_qp(geom, p, vcov=None, time_limit=600)</code></pre>
+  </div>
+</article>
+
+<!-- ============================================================ 8 -->
+<h2 id="common"><span class="num">8</span>Shared building blocks</h2>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Module</th><th>Functions</th><th>Used by</th></tr></thead>
+  <tbody>
+    <tr><td><code>transforms.py</code></td><td><code>build_obs_idx</code> (row → slab position), <code>mobius</code>, <code>zeta</code>, <code>phi_at</code>; <code>push_to_ub64</code> (the push in float64), <code>fw_lb_rows_gpu</code> (the Frank–Wolfe bound in float64 on the GPU), <code>fw_lb_stream64</code> (the same bound two lattice layers at a time, where the slab does not fit), <code>layers_gpu</code>; the races' <code>push_to_ub</code> (float32 push) and <code>layers_for</code></td><td>the class's GPU runners (both bounds); the bm_admm race (<code>push_to_ub</code>)</td></tr>
+    <tr><td><code>arcflow_kernels.py</code></td><td><code>make_r_feasible_gpu</code> (clip, then push unit mass forward through the lattice), <code>a_mul</code>, <code>at_mul</code>, <code>H0inv_woodbury</code>, the blocked zeta kernels; the float64 twins <code>make_r_feasible_gpu64</code>, <code>longest_path_gpu64</code> (the bound's sweep, one launch per lattice layer) and <code>build_layers_gpu</code> (<code>build_layers</code>'s arrays, built on the GPU)</td><td>flow_admm's iteration; the races' push (float32); the class's push and lower bound (float64)</td></tr>
+    <tr><td><code>certificate.py</code></td><td><code>fw_lb_slab</code>: the Frank–Wolfe lower bound, a numba longest path over the 2<sup>n</sup> nodes; <code>fw_lb_rows</code>, the same bound from a point's observed rows, weighted norm too; <code>push_flow</code> (<code>make_r_feasible_gpu</code> in float64 on the CPU), <code>zeta_rows</code>, <code>slab_index</code></td><td>bm_qp, flow_qp</td></tr>
+    <tr><td><code>butterfly.py</code></td><td><code>butterfly_fast</code> (Möbius and zeta butterflies)</td><td>transforms</td></tr>
+    <tr><td><code>qp_native.py</code></td><td><code>solve_qp_native</code> (active-set Cholesky over the simplex), <code>project_simplex</code></td><td>flow_cg's master; IP-CG's native master</td></tr>
+    <tr><td><code>qp_gurobi.py</code>, <code>solve_qp.py</code></td><td><code>solve_qp_gurobi</code>; <code>solve_rmp(Q, h, backend)</code></td><td>IP-CG's master</td></tr>
+    <tr><td><code>gurobi_env.py</code></td><td><code>_ENV</code>: the one licensed Gurobi environment</td><td>every Gurobi model</td></tr>
+    <tr><td><code>weights.py</code>, <code>layers.py</code>, <code>instances.py</code></td><td><code>_as_weight</code>; <code>generate_layer</code>; <code>warmup_instance</code></td><td>IP-CG and the exact QPs; lattices; warm-up</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============================================================ 9 -->
+<h2 id="legacy"><span class="num">9</span>The race path</h2>
+<p>The paper's timing tables come from races. <code>solver.solve(n, cd, method, opt_ref=OPT)</code> runs one named method until its feasible upper bound is within 1 % of the certified optimum. It refuses <code>criterion="cert"</code> and <code>method="auto"</code>, with a pointer to the class. Rerun with this code, the paper's race cells reproduce the stored iterations and upper bounds bit for bit (all but the two-hour n35_sparse_lam5 cell, which was not rerun).</p>
+<p>The class runs the same race when given <code>opt</code>: <code>rum.calculate_distance(method="flow_cg", opt=OPT)</code> calls <code>solver.solve()</code> with <code>run_one.py</code>'s arguments. On 11 cells (bm_admm n18_m39, n20_m138 at λ = 0, 0.5, 1 and n20_m1380; flow_cg n18_sparse at λ = 0 and 1, n20_m28 and n25_sparse; flow_admm n18_sparse and n18_m4) the two gave the same iterations and ub, bit for bit, and all 11 reached the target.</p>
+<p><strong>The stop rule.</strong> A race stops at the first check where (ub − opt)/opt ≤ 0.01, i.e. ub ≤ 1.01·opt. BM-ADMM and Flow-ADMM test the ratio every <code>check</code> iterations; Flow-CG tests ub ≤ 1.01·opt after every column, the same rule multiplied out. When opt = 0 (or nearly), the target is max(1.01·opt, floor): run_one.py and feas_one.py then pass opt = floor/1.01. IP-CG's race (<code>solve_cgip_paper</code>) tests a strict ub &lt; 1.01·opt and has no race mode in the class; <code>replication/cgip/run_cgip.py</code> applies the paper's stop rule to IP-CG and IP-H-CG through the class's session (<code>below=</code>) instead.</p>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Piece</th><th>What it does</th><th>Used by</th></tr></thead>
+  <tbody>
+    <tr><td><code>solver.solve(n, cd, method, opt_ref)</code></td><td>the race; returns a dict (ub, iters, wall_s, stop, …)</td><td><code>run_one.py</code> and <code>feas_one.py</code> with <code>--criterion race</code></td></tr>
+    <tr><td><code>solve_bm_admm(n, cd, opt_ref=…)</code></td><td>the BM-ADMM race: a float32 sprint, then a float64 finish</td><td><code>solve()</code></td></tr>
+    <tr><td><code>solve_cgbfqp</code>, <code>solve_flow_admm</code>, <code>solve_cgip_paper</code></td><td>the other engines' paper wrappers (solve_flow_admm: race only). <code>solve_cgbfqp</code> keeps its own certificate mode, which the class's flow_cg runner calls</td><td><code>solve()</code>, the class</td></tr>
+    <tr><td><code>rum.py</code></td><td>the older RUM class (the exact QPs and IP-CG only)</td><td><code>solve_cgip_paper</code></td></tr>
+    <tr><td><code>params.py</code></td><td>the paper's constants (BM_ALPHA, BM_CHECK_EVERY, AF_DEFAULTS, the β rule, …)</td><td>the wrappers, <code>defaults.py</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<footer>
+  RUM Distance Solvers · rum-testing-gpu, solver/. Timings were measured on an NVIDIA RTX 5090 (32 GB) with an AMD Ryzen 9 9950X; the memory limits come from the planners' formulas in <code>solver/rum_solver.py</code>. The same material in prose: <code>solver/DESIGN_NOTES.md</code>.
+</footer>
+</main>
+</div>
+</div>
+</body>
+</html>

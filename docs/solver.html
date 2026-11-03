@@ -450,7 +450,7 @@ nav.site + header.top { padding-top: 28px; }
 <pre><code>from solver.rum_solver import RUM
 
 rum = RUM(menu, alternative, choice_probability)   <span class="cm"># one row per observed (menu, alternative)</span>
-rum = RUM.from_rows(cd, n)                         <span class="cm"># the same from an (M, 3) array of rows</span>
+rum = RUM.from_rows(cd, n)                         <span class="cm"># the same from cd, the choice data: an (M, 3) array of rows</span>
 res = rum.calculate_distance()                     <span class="cm"># automatic method, abs 1e-5 / rel 1e-4, 1 h</span>
 res = rum.calculate_distance(method="bm_admm", rel_tol=1e-3,
                              method_args={"check": 100}, max_time=600)
@@ -986,7 +986,7 @@ res.to_dict()                                      <span class="cm"># the fields
 
 <!-- ============================================================ 7 -->
 <h2 id="methods"><span class="num">7</span>The seven methods</h2>
-<p>Each method can be called through the class (<code>method="…"</code>, <code>method_args={…}</code>) or as its engine directly. Below, <code>cd</code> is the (mp, 3) array of rows (menu, alternative, p̂) that the engines take, and <code>geom</code> is the class's geometry object. Any object with <code>menu</code>, <code>alternative</code>, <code>num_alternatives</code> and <code>M</code> works as <code>geom</code>, including the older class <code>solver.rum.RUM</code>.</p>
+<p>Each method can be called through the class (<code>method="…"</code>, <code>method_args={…}</code>) or as its engine directly. Below, <code>cd</code> is the choice data the engines take: an (mp, 3) array with one row (menu, alternative, p̂) for each of the mp observed pairs, and <code>geom</code> is the class's geometry object. Any object with <code>menu</code>, <code>alternative</code>, <code>num_alternatives</code> and <code>M</code> works as <code>geom</code>, including the older class <code>solver.rum.RUM</code>.</p>
 
 <article class="method" id="m-bm_admm">
   <div class="method-head">

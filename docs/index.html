@@ -411,9 +411,15 @@ table.paths td code { overflow-wrap: anywhere; }
 </ul>
 
 <h2 id="start"><span class="num">4</span>Quick start</h2>
-<pre><code>from solver.rum_solver import RUM
+<pre><code>import pandas as pd
+from solver.rum_solver import RUM
 
-<span class="cm"># cd: an (M, 3) array of rows (menu bitmask over alternatives 0..n-1, chosen alternative, p_hat)</span>
+<span class="cm"># cd ("choice data") holds the observed choice probabilities, one row per (menu, alternative) pair:</span>
+<span class="cm">#   menu  the offered menu, a bitmask over the alternatives 0..n-1 (bit a set = alternative a offered)</span>
+<span class="cm">#   alt   an alternative in the menu</span>
+<span class="cm">#   phat  the observed probability of choosing alt from the menu</span>
+n = 18                                  <span class="cm"># the number of alternatives</span>
+cd = pd.read_csv("final_data/Numerical1/raw_data/n18_d1pct.csv").to_numpy()
 rum = RUM.from_rows(cd, n)
 res = rum.calculate_distance()          <span class="cm"># automatic method; stops at abs 1e-5 or rel 1e-4; 1 h cap</span>
 print(res.lb, res.ub, res.exit_flag)</code></pre>

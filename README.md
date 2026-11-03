@@ -40,8 +40,15 @@ Python 3.10 or newer (the paper's runs used 3.12).
 ## Use
 
 ```python
+import pandas as pd
 from solver.rum_solver import RUM
-# cd: (mp, 3) rows = (menu bitmask over alternatives 0..n-1, chosen alternative, p_hat)
+
+# cd ("choice data") holds the observed choice probabilities, one row per (menu, alternative) pair:
+#   menu  the offered menu, a bitmask over the alternatives 0..n-1 (bit a set = alternative a offered)
+#   alt   an alternative in the menu
+#   phat  the observed probability of choosing alt from the menu
+n = 18                                         # the number of alternatives
+cd = pd.read_csv("final_data/Numerical1/raw_data/n18_d1pct.csv").to_numpy()
 rum = RUM.from_rows(cd, n)
 res = rum.calculate_distance()                 # automatic method; stops at abs 1e-5 or rel 1e-4; 1 h cap
 print(res)                                     # exit_flag, distance, lb, ub, gaps, times, ...
@@ -49,11 +56,11 @@ res = rum.calculate_distance(method="bm_admm", rel_tol=1e-3, method_args={"check
 res = rum.calculate_distance(method="flow_cg", opt=OPT)   # the paper's timing race: stop at ub <= 1.01 OPT
 ```
 
-`RUM(menu, alternative, p_hat, num_alternatives=n)` takes the three columns separately. With `opt`, a call
-is the paper's timing race rather than a certificate: it stops once the upper bound reaches
-max(1.01 OPT, `opt_floor`) and computes no lower bound. Each GPU method takes `dtype` in `method_args`
-(BM-ADMM float64 or float32, Flow-CG float32, uint24 or uint16 for its pricing values, Flow-ADMM float32);
-without it the class takes the most precise format that fits the GPU.
+A menu does not need a row for every alternative in it. `RUM(menu, alt, p_hat, num_alternatives=n)` takes the
+three columns of `cd` separately. With `opt`, a call is the paper's timing race rather than a certificate: it
+stops once the upper bound reaches max(1.01 OPT, `opt_floor`) and computes no lower bound. Each GPU method
+takes `dtype` in `method_args` (BM-ADMM float64 or float32, Flow-CG float32, uint24 or uint16 for its pricing
+values, Flow-ADMM float32); without it the class takes the most precise format that fits the GPU.
 
 `method=None` chooses the method from n, the density of the observed cells and the GPU's free memory:
 BM-ADMM from 2 % density at n = 11-13, from 1 % at n = 14-17 and from 0.5 % at n >= 18, Flow-CG below

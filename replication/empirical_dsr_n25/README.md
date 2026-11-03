@@ -1,7 +1,7 @@
-# tab:dsg: the Dean-Stoye-Ravindran choice-overload data, n = 25
+# tab:dsr: the choice-overload data of Dean, Ravindran and Stoye (2022), n = 25
 
 The Hong-Li bootstrap test of RUM on the DSR data, through `rum.bootstrap` (`solver/inference/`): the p-value,
-the certified dist(p&#770;) and the Flow-CG time of tab:dsg. The IP-CG and IP-H-CG columns are cluster runs; see
+the certified dist(p&#770;) and the Flow-CG time of tab:dsr. The IP-CG and IP-H-CG columns are cluster runs; see
 [`../cgip/`](../cgip/).
 
 ## The data
@@ -10,7 +10,7 @@ the certified dist(p&#770;) and the Flow-CG time of tab:dsg. The IP-CG and IP-H-
 option and appears in every menu: 24 binary menus {0, j}, 276 ternary menus {0, i, j} and the grand menu of all
 25 (the overload test). The small menus are thin, seen by about 15 respondents each; the grand menu by all 520.
 
-Two observation sets: **alt0** (tab:dsg's Default Only), only the reference option's frequency in each menu,
+Two observation sets: **alt0** (tab:dsr's Default Only), only the reference option's frequency in each menu,
 M = 301 cells; and **full** (All Alternatives), every alternative of every menu, M = 901.
 
 `final_data/Application_DSR/raw_data/overload_data_25_long.csv` has one row per respondent and question
@@ -54,7 +54,7 @@ RUM is not rejected at 5 % on either set. Every draw is decided in one run; with
 p > 0.05. The IP-CG and IP-H-CG runs on the cluster reach the same decision on every draw
 (`../cgip/cluster_records/Application_DSR/`).
 
-BM-ADMM is not in tab:dsg: at n = 25 it has to run in float32, and on alt0 it did not certify dist(p&#770;)
+BM-ADMM is not in tab:dsr: at n = 25 it has to run in float32, and on alt0 it did not certify dist(p&#770;)
 within a 4 h cap, where Flow-CG needs 0.8 s. M = 301 cells against a lattice of 4.2 x 10^8 is the far sparse
 end of the paper's crossover.
 

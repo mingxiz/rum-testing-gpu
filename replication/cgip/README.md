@@ -12,11 +12,11 @@ earlier version of the CGIP code; their result files are in [`cluster_records/`]
 | tab:density18-20, the IP-CG row | 30 cells | `race --set Numerical1 --key <cell> --method ip_cg` |
 | tab:binary | 15 cells x 2 methods | `race --set Numerical2 --key <cell> --method ip_cg` (or `ip_cg_heur`) |
 | tab:dense | 12 cells x 2 methods | `race --set Numerical3 --key <cell> --method ip_cg` (or `ip_cg_heur`) |
-| tab:dsg | alt0, full x 2 methods | `dsr --obs alt0 --method ip_cg` (or `--obs full`, `ip_cg_heur`) |
+| tab:dsr | alt0, full x 2 methods | `dsr --obs alt0 --method ip_cg` (or `--obs full`, `ip_cg_heur`) |
 | tab:ai | 2 models x 2 methods | `ai --model gpt6luna_noreason --method ip_cg` (GPT-6 Luna; `gmicloud` = DeepSeek V4 Flash) |
 
 The cells are the keys of `final_data/<set>/opt_ref.json`. The cluster's numbers to compare with are the CGIP and
-CGIP-heur rows of `final_results/` (from `cluster_records/*/summary.csv`). tab:dsg prints 84,747 s and
+CGIP-heur rows of `final_results/` (from `cluster_records/*/summary.csv`). tab:dsr prints 84,747 s and
 28,449 s (alt0), 348,381 s and 204,779 s (full); tab:ai prints "≥ 24 h" in all four cells.
 
 ## How a run stops

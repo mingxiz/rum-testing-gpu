@@ -931,7 +931,7 @@ with rum.session() as s:                    <span class="cm"># e.g. flow_cg, flo
 </div>
 <ul>
   <li><b>Every draw is decided.</b> On DSR each of the 10,000 decisions equals that of a separate run that solved every draw to abs 1e-5, and that of the IP-CG and IP-H-CG cluster runs (<code>replication/cgip/cluster_records/</code>). On AI every draw is below (largest screen bound 0.555 τ<sub>lo</sub> and 0.682 τ<sub>lo</sub>).</li>
-  <li><b>One run settles every draw.</b> At abs 5e-4, 2 draws (alt0) and 13 (full) are undecided; <code>refine</code> settles them inside the same run. tab:dsg prints this run: 688 s and 1,499 s.</li>
+  <li><b>One run settles every draw.</b> At abs 5e-4, 2 draws (alt0) and 13 (full) are undecided; <code>refine</code> settles them inside the same run. tab:dsr prints this run: 688 s and 1,499 s.</li>
   <li><b>The interval, cross-checked.</b> The 1,000 DSR draws with the largest upper bounds were solved again to abs 5e-6. Every tight bracket overlaps the stored one, the quantile is pinned to 3e-8 (alt0), and the exact lower end, in [−0.0476203, −0.0476199], lies inside the reported bracket [−0.0476203, −0.0475303]. On full the quantile is pinned to 6.5e-8, and the exact lower end, in [−0.0901695, −0.0901691], lies inside [−0.0901698, −0.0900137]. Both reported lower ends are within 1e-6 of the exact ones.</li>
   <li><b>Both DSR intervals contain 0</b>, consistent with p &gt; 0.05.</li>
   <li><b>The other rows of <code>final_results</code>.</b> AI with Flow-CG: p = 0 in 36 s and 105 s (gpt-5.6-luna, deepseek-v4-flash) and in 106 s and 545 s (gpt-6 luna, GMI Cloud). DSR at B = 1,000: p = 0.108 and 0.143 in 70 s and 152 s.</li>

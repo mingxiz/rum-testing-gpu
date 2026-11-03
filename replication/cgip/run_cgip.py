@@ -15,7 +15,7 @@ race  tab:density18-20 (Numerical1, IP-CG only), tab:binary (Numerical2), tab:de
       of final_data/<set>/ by rum.session(method).solve(p_hat, below=target), which stops once
       UB < target = OPT + max(1e-2 OPT, 1e-3), the paper's criterion, or at the cap: 7 d for Numerical2
       with n >= 32, else 24 h, the cluster's limits. A capped cell is the table's ">= 24 h" or ">= 7 d".
-dsr   tab:dsg: rum.bootstrap on the DSR panel, as empirical_dsr_n25/run_bootstrap.py.
+dsr   tab:dsr: rum.bootstrap on the DSR panel, as empirical_dsr_n25/run_bootstrap.py.
 ai    tab:ai: rum.bootstrap on the AI table, panel input, as empirical_ai_n18/run_bootstrap.py.
       dsr and ai certify p_hat first, within --cert-hours, and stop there if it does not close: on the
       cluster no AI certificate closed in 24 h, which is the table's ">= 24 h".
@@ -137,7 +137,7 @@ def main():
     r.add_argument("--key", required=True, help="a cell of final_data/<set>/opt_ref.json, e.g. n25_sparse")
     r.add_argument("--cap-hours", type=float, help="default: 168 for Numerical2 with n >= 32, else 24")
     r.add_argument("--verbose", action="store_true", help="one line per column")
-    d = sub.add_parser("dsr", help="tab:dsg")
+    d = sub.add_parser("dsr", help="tab:dsr")
     d.add_argument("--obs", required=True, choices=["alt0", "full"])
     i = sub.add_parser("ai", help="tab:ai")
     i.add_argument("--model", required=True, choices=sorted(AI))

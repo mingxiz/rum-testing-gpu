@@ -12,7 +12,7 @@ wrote them; `validation/make_final_results.py` and `validation/make_final_result
 | `Numerical1/` | tab:density18-20, the IP-CG entries | `summary.csv`: the 30 cells at lambda = 0, of which the three pairwise cells were solved (`n18_sparse.json`, `n19_sparse.json`, `n20_sparse.json`) |
 | `Numerical2/` | tab:binary | `summary.csv`; one JSON per solved cell: `cgip_<cell>.json` (IP-CG), `cgip_heur_rand_R10_<cell>.json` (IP-H-CG) |
 | `Numerical3/` | tab:dense | the same |
-| `Application_DSR/` | tab:dsg | `summary.csv` and the four reported runs (alt0 and full, IP-CG and IP-H-CG): `<run>.json`, the dist(p&#770;) certificate before and after refinement (`<run>_dist.json`, `<run>_dist_refined.json`), every draw (`<run>_draws.csv`) and the draws settled at abs 1e-7 (`<run>_refined.csv`) |
+| `Application_DSR/` | tab:dsr | `summary.csv` and the four reported runs (alt0 and full, IP-CG and IP-H-CG): `<run>.json`, the dist(p&#770;) certificate before and after refinement (`<run>_dist.json`, `<run>_dist_refined.json`), every draw (`<run>_draws.csv`) and the draws settled at abs 1e-7 (`<run>_refined.csv`) |
 | `Application_AI/` | tab:ai | `summary.csv`: the runs on the 100-reply data (`final_data/Application_AI/raw_data/gpt5.6-luna.npz`, `deepseekv4-flash.npz`), all stopped by the 24 h limit during the dist(p&#770;) certificate |
 
 - `summary.csv` has one row per submitted run, solved or not, with the Slurm job id, elapsed time, peak memory and

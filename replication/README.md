@@ -18,7 +18,7 @@ certificates and the bootstrap through the RUM class (`solver/rum_solver.py`).
 | tab:density18, tab:density19, tab:density20 | `python replication/density_grid/reproduce.py` (lambda = 0); `python validation/run_lambda_study.py --task 3` (lambda = 0.5, 1) | `density_grid/results/` | `Numerical1/results_n{18,19,20}.csv` |
 | tab:binary (pairwise design, n = 25-35) | `python validation/run_lambda_study.py --task 1` | `feasibility_in_n/results/`, `convex_path/results/` | `Numerical2/results_pairwise.csv` |
 | tab:dense (n = 20, density 0.1-5 %) | `python validation/run_lambda_study.py --task 2 3` | `feasibility_in_density/results/`, `density_grid/results/` | `Numerical3/results_density.csv` |
-| tab:dsg (DSR data, n = 25) | `python replication/empirical_dsr_n25/run_bootstrap.py --obs alt0` (and `--obs full`) | `empirical_dsr_n25/results/` | `Application_DSR/results_dsr.csv` |
+| tab:dsr (DSR data, n = 25) | `python replication/empirical_dsr_n25/run_bootstrap.py --obs alt0` (and `--obs full`) | `empirical_dsr_n25/results/` | `Application_DSR/results_dsr.csv` |
 | tab:ai and the two AI intervals (LLM data, n = 18) | `python replication/empirical_ai_n18/run_bootstrap.py --model gpt6luna_noreason` (and `gmicloud`; see its README) | `empirical_ai_n18/results/` | `Application_AI/results_ai.csv` |
 | the IP-CG and IP-H-CG entries of all of the above | `python replication/cgip/run_cgip.py ...` (see its README) | `cgip/cluster_records/`: the paper's cluster runs | the CGIP and CGIP-heur rows |
 

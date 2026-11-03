@@ -1,7 +1,7 @@
 """final_results/Application_DSR and final_results/Application_AI: the two empirical applications as CSV,
 one row per complete run, plus the CGIP / CGIP-heur cluster runs.
 
-    final_results/Application_DSR/results_dsr.csv   Dean-Stoye-Ravindran, n = 25 (alt0 and full)
+    final_results/Application_DSR/results_dsr.csv   Dean, Ravindran and Stoye (2022), n = 25 (alt0 and full)
     final_results/Application_AI/results_ai.csv     LLM choice data, n = 18 (gpt-5.6-luna, deepseek-v4-flash,
                                                     gpt-6 luna without reasoning, GMI Cloud)
 

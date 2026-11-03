@@ -180,8 +180,9 @@ itself converges fast: its distance is within 1e-4 of the optimum, and its lower
 error follows the negative Block-Marschak terms of the iterate on the unobserved part of the
 lattice, which ADMM removes slowly. A float64 push gives the same bound. A polished upper bound (the
 exact QP over the 500 widest paths of the pushed flow) reaches the optimum early on those small
-designs, but not on the Dean-Stoye-Ravindran data (n = 25, 301 observations), where the iterate
-itself is far off; the density rule already sends such designs to flow_cg, so it was not adopted.
+designs, but not on the choice-overload data of Dean, Ravindran and Stoye (2022; n = 25, 301
+observations), where the iterate itself is far off; the density rule already sends such designs to
+flow_cg, so it was not adopted.
 
 **Without a GPU.** flow_qp rather than bm_qp: on the n = 6-10 grid flow_qp was faster on every
 design but the full one (every menu observed), and at n = 10 its certified bracket was 15-200x

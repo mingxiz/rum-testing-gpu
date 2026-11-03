@@ -10,7 +10,7 @@ tables print.
 | `Numerical1/results_n18.csv`, `results_n19.csv`, `results_n20.csv` | tab:density18, tab:density19, tab:density20 (`tab_race_n{18,19,20}_l{0,05,1}.tex`) | BM-ADMM, CGBFQP-GPU, Flow-ADMM; CGIP (lambda = 0) |
 | `Numerical2/results_pairwise.csv` | tab:binary (`tab_fes_pairwise_l{0,05,1}.tex`), n = 25, 27, 30, 32, 35 | CGBFQP-GPU, CGIP, CGIP-heur |
 | `Numerical3/results_density.csv` | tab:dense (`tab_fes_density_l{0,05,1}.tex`), n = 20, density 0.1, 0.5, 1, 5 % | BM-ADMM, CGIP, CGIP-heur |
-| `Application_DSR/results_dsr.csv` | tab:dsg: the DSR application, n = 25, alt0 and full (see `Application_DSR/README.md`) | CGBFQP-GPU (B = 1,000 and 10,000); CGIP, CGIP-heur (cluster, B = 10,000) |
+| `Application_DSR/results_dsr.csv` | tab:dsr: the DSR application, n = 25, alt0 and full (see `Application_DSR/README.md`) | CGBFQP-GPU (B = 1,000 and 10,000); CGIP, CGIP-heur (cluster, B = 10,000) |
 | `Application_AI/results_ai.csv` | tab:ai and the two AI intervals: the LLM application, n = 18: gpt-5.6-luna and deepseek-v4-flash (100 replies per menu), gpt-6 luna without reasoning and GMI Cloud (2,000) (see `Application_AI/README.md`) | BM-ADMM, CGBFQP-GPU; CGIP, CGIP-heur (capped at 24 h) |
 
 The CGIP and CGIP-heur rows are CPU cluster runs made with an earlier version of the CGIP code. Their result files

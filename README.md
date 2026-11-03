@@ -1,5 +1,10 @@
 # d-rum-testing-gpu
 
+> **Beta software.** The core procedure has been validated against the reference implementation and passes an
+> extensive test suite (see [`tests/`](tests/)). That said, the package is still at an early stage. Please report
+> any issues on [GitHub](https://github.com/mingxiz/d-rum-testing-gpu/issues). If you are using it in your
+> research, please let me know and I will greatly appreciate your feedback.
+
 GPU algorithms for testing discrete-choice random utility models (RUM): the code of the paper *Alternative
 Computational Formulations for Testing Discrete-Choice Random Utility Models*.
 
